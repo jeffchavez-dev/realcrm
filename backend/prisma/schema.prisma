@@ -1,0 +1,168 @@
+// RealCRM — Prisma Schema
+// Switch provider to "postgresql" and update DATABASE_URL to go live
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("agent") // admin | manager | agent | isa
+  agentId   String?
+  active    Boolean  @default(true)
+  lastLogin DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Agent {
+  id         String   @id @default(cuid())
+  name       String
+  email      String   @unique
+  phone      String?
+  role       String   @default("Agent") // Agent | ISA | Manager | Admin
+  status     String   @default("Active") // Active | Inactive
+  avatar     String?
+  capLimit   Float    @default(16000)
+  capCurrent Float    @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  leads      Lead[]
+  activities Activity[]
+  deals      Deal[]
+  tasks      Task[]
+}
+
+model Lead {
+  id           String   @id @default(cuid())
+  firstName    String
+  lastName     String
+  email        String?
+  phone        String?
+  source       String   @default("Unknown") // Google PPC | Facebook | Upnest | Homelight | FastExpert | Referral | Sphere
+  status       String   @default("New")     // New | Contacted | Nurturing | Hot | Under Contract | Closed | Lost
+  score        Int      @default(0)         // 0–100 AI lead score
+  temperature  String   @default("Cold")    // Cold | Warm | Hot
+  budget       Float?
+  preApproved  Boolean  @default(false)
+  timeline     String?  // Immediately | 1-3 months | 3-6 months | 6-12 months | 12+ months
+  notes        String?
+  tags         String?  // comma-separated
+  lastContact  DateTime?
+  assignedTo   Agent?   @relation(fields: [agentId], references: [id])
+  agentId      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  activities   Activity[]
+  deals        Deal[]
+  tasks        Task[]
+  properties   SavedProperty[]
+  alerts       EAlert[]
+}
+
+model Activity {
+  id          String   @id @default(cuid())
+  type        String   // call | sms | email | note | property_view | site_visit | status_change | docusign
+  description String
+  outcome     String?  // Connected | No Answer | Left Voicemail | Replied | Opened | Clicked
+  duration    Int?     // seconds (for calls)
+  createdAt   DateTime @default(now())
+
+  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  leadId      String
+  agent       Agent?   @relation(fields: [agentId], references: [id])
+  agentId     String?
+}
+
+model Deal {
+  id              String   @id @default(cuid())
+  stage           String   @default("New Lead") // New Lead | Contacted | Qualifying | Active Search | Offer Made | Under Contract | Closed Won | Closed Lost
+  propertyAddress String?
+  mlsId           String?
+  value           Float?   // property price
+  commission      Float?   // estimated commission
+  closeDate       DateTime?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  lead            Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  leadId          String
+  agent           Agent    @relation(fields: [agentId], references: [id])
+  agentId         String
+}
+
+model Task {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  dueDate     DateTime?
+  priority    String   @default("Normal") // Low | Normal | High | Urgent
+  completed   Boolean  @default(false)
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+
+  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  leadId      String
+  agent       Agent    @relation(fields: [agentId], references: [id])
+  agentId     String
+}
+
+model SavedProperty {
+  id        String   @id @default(cuid())
+  mlsId     String?
+  address   String
+  city      String?
+  state     String?
+  zip       String?
+  price     Float?
+  beds      Int?
+  baths     Float?
+  sqft      Int?
+  status    String   @default("Active") // Active | Pending | Sold
+  photoUrl  String?
+  listingUrl String?
+  savedAt   DateTime @default(now())
+
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  leadId    String
+}
+
+model EAlert {
+  id          String   @id @default(cuid())
+  name        String
+  city        String?
+  zip         String?
+  minPrice    Float?
+  maxPrice    Float?
+  minBeds     Int?
+  propertyType String?  // Single Family | Condo | Townhouse | Multi-Family | Land
+  frequency   String   @default("Daily") // Instant | Daily | Weekly
+  active      Boolean  @default(true)
+  lastSent    DateTime?
+  createdAt   DateTime @default(now())
+
+  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  leadId      String
+}
+
+model Integration {
+  id        String   @id @default(cuid())
+  name      String   @unique // mls | twilio | docusign | google_ads
+  label     String
+  status    String   @default("disconnected") // connected | disconnected | error
+  config    String?  // JSON string of non-sensitive config
+  lastSync  DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
