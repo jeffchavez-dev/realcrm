@@ -15,11 +15,11 @@ const nav = [
 ];
 
 const NOTIFICATIONS = [
-  { id:1, type:'hot',   icon: Flame,        color:'text-red-500 bg-red-50',    title:'Hot lead needs follow-up', body:'Marcus Thompson hasn\'t been contacted in 3 days', time:'5m ago',  read:false, link:'/leads' },
-  { id:2, type:'task',  icon: Clock,        color:'text-amber-500 bg-amber-50', title:'Task due today',           body:'Send CMA to Sandra Williams by 5:00 PM',           time:'1h ago',  read:false, link:'/leads' },
-  { id:3, type:'sign',  icon: CheckCheck,   color:'text-green-500 bg-green-50', title:'Document signed!',         body:'James Lee signed the Buyer Representation Agreement',time:'2h ago',  read:true,  link:'/backoffice' },
-  { id:4, type:'lead',  icon: Users,        color:'text-blue-500 bg-blue-50',   title:'New lead assigned',        body:'Robert Martinez from Google PPC — budget $650K',   time:'3h ago',  read:true,  link:'/leads' },
-  { id:5, type:'alert', icon: AlertCircle,  color:'text-purple-500 bg-purple-50',title:'Pipeline update',        body:'Deal moved to Under Contract: 412 Elm St, Bethesda', time:'5h ago',  read:true,  link:'/pipeline' },
+  { id:1, type:'hot',   icon: Flame,       color:'text-red-500 bg-red-50',     title:'Hot lead needs follow-up', body:'Nancy Davis hasn\'t been contacted in 3 days',       time:'5m ago', read:false, link:'/leads/cmow6ayfl000wwx8u4gp8ezi0' },
+  { id:2, type:'task',  icon: Clock,       color:'text-amber-500 bg-amber-50', title:'Task due today',           body:'Send CMA to Sandra Wilson by 5:00 PM',               time:'1h ago', read:false, link:'/leads/cmow6ayeg000owx8u42owmeah' },
+  { id:3, type:'sign',  icon: CheckCheck,  color:'text-green-500 bg-green-50', title:'Document signed!',         body:'Jennifer Walsh signed the Buyer Representation Agreement', time:'2h ago', read:true, link:'/backoffice' },
+  { id:4, type:'lead',  icon: Users,       color:'text-blue-500 bg-blue-50',   title:'New lead assigned',        body:'Carlos Hernandez from Google PPC — budget $650K',    time:'3h ago', read:true,  link:'/leads/cmow6ayet000qwx8uay9h98uw' },
+  { id:5, type:'alert', icon: AlertCircle, color:'text-purple-500 bg-purple-50',title:'Pipeline update',        body:'Deal moved to Under Contract: 412 Elm St, Bethesda',  time:'5h ago', read:true,  link:'/pipeline' },
 ];
 
 function GlobalSearch({ onClose }) {
@@ -149,7 +149,7 @@ function NotificationBell() {
             {notes.map(n => {
               const Icon = n.icon;
               return (
-                <button key={n.id} onClick={() => { markRead(n.id); setOpen(false); navigate(n.link); }}
+                <button key={n.id} onClick={() => { const link = n.link; markRead(n.id); setOpen(false); setTimeout(() => navigate(link), 10); }}
                   className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors ${!n.read ? 'bg-blue-50/40' : ''}`}>
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${n.color}`}>
                     <Icon size={14}/>
