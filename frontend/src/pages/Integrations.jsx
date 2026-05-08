@@ -33,7 +33,7 @@ const CATEGORIES = [
         logo: '🌴',
         status: 'available',
         tier: 'standard',
-        description: 'California's largest MLS. Covers Southern CA, Inland Empire, and surrounding markets.',
+        description: "California's largest MLS. Covers Southern CA, Inland Empire, and surrounding markets.",
         requirements: ['CRMLS membership', 'RESO Web API access approval', 'Data license agreement'],
         envKeys: ['CRMLS_API_KEY', 'CRMLS_ACCESS_TOKEN'],
         docs: 'https://crmls.org/technology/api',
