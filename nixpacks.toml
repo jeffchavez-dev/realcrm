@@ -10,8 +10,8 @@ cmds = [
 [phases.build]
 cmds = [
   "cd frontend && npm run build",
-  "cd backend && npx prisma generate && node prisma/seed.js || true"
+  "cd backend && npx prisma generate"
 ]
 
 [start]
-cmd = "cd backend && NODE_ENV=production node src/index.js"
+cmd = "cd backend && npx prisma db push --skip-generate && node prisma/seed.js ; node prisma/seedUsers.js ; NODE_ENV=production node src/index.js"
