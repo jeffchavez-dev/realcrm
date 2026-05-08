@@ -4,6 +4,15 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Seeding RealCRM database...');
 
+  // ── CLEAN SLATE (safe for repeated runs) ──────────────────────────
+  await prisma.eAlert.deleteMany({});
+  await prisma.savedProperty.deleteMany({});
+  await prisma.task.deleteMany({});
+  await prisma.deal.deleteMany({});
+  await prisma.activity.deleteMany({});
+  await prisma.lead.deleteMany({});
+  console.log('  ✓ Cleared existing data');
+
   // ── AGENTS ────────────────────────────────────────────────────────
   const agents = await Promise.all([
     prisma.agent.upsert({ where:{ email:'sarah.johnson@realcrm.com' }, update:{}, create:{ name:'Sarah Johnson', email:'sarah.johnson@realcrm.com', phone:'(202) 555-0101', role:'Manager', status:'Active', capLimit:16000, capCurrent:12400 }}),
@@ -39,8 +48,7 @@ async function main() {
 
   const leads = [];
   for (const ld of leadsData) {
-    const { id, ...data } = ld;
-    const lead = await prisma.lead.upsert({ where: { id }, update: data, create: { id, ...data } });
+    const lead = await prisma.lead.create({ data: ld });
     leads.push(lead);
   }
 
