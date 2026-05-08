@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { leads as leadsApi, agents as agentsApi } from '../api/client';
-import { Search, Filter, Plus, ChevronRight, Flame, Thermometer, Snowflake, Phone, Mail, Clock, X, User, DollarSign, MapPin, Tag } from 'lucide-react';
+import { Filter, Plus, ChevronRight, Flame, Thermometer, Snowflake, Phone, Mail, Clock, X, User, DollarSign, MapPin, Tag } from 'lucide-react';
 
 const tempIcon  = { Hot:<Flame size={12}/>, Warm:<Thermometer size={12}/>, Cold:<Snowflake size={12}/> };
 const tempStyle = { Hot:'bg-red-100 text-red-700', Warm:'bg-amber-100 text-amber-700', Cold:'bg-blue-100 text-blue-700' };
@@ -195,17 +195,17 @@ export default function Leads() {
         </button>
       </div>
 
-      {/* Search + Filters */}
+      {/* Filters */}
       <div className="card p-4 mb-4">
         <div className="flex gap-3">
-          <div className="relative flex-1">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input className="input pl-9" placeholder="Search by name, email, phone..." value={filters.search}
-              onChange={e => setFilter('search', e.target.value)} />
-          </div>
           <button onClick={() => setShowFilters(f => !f)} className={`btn-secondary flex items-center gap-2 ${(filters.status || filters.source || filters.temperature) ? 'border-blue-400 text-blue-600' : ''}`}>
             <Filter size={15}/>Filters {(filters.status || filters.source || filters.temperature) ? '●' : ''}
           </button>
+          {(filters.status || filters.source || filters.temperature) && (
+            <button onClick={() => setFilters({ search:'', status:'', source:'', temperature:'' })} className="text-xs text-gray-400 hover:text-red-500 transition-colors">
+              Clear filters
+            </button>
+          )}
         </div>
 
         {showFilters && (
