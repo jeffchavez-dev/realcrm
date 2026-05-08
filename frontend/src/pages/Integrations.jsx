@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import {
-  CheckCircle, XCircle, Zap, ExternalLink, Search,
-  Phone, FileText, BarChart2, Mail, MessageSquare,
-  Calendar, DollarSign, Database, Globe, Video,
-  Users, Shield, Repeat, Mic, ChevronDown, ChevronUp,
-  AlertCircle, Star, Lock
+  CheckCircle, XCircle, ExternalLink, Search,
+  Phone, FileText, BarChart2, Mail,
+  Calendar, DollarSign, Database, Globe,
+  Users, ChevronDown, ChevronUp
 } from 'lucide-react';
 
 /* ─── Integration Master List ─── */
