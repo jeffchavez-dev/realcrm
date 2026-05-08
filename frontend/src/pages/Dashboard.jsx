@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { dashboard } from '../api/client';
+import { useAuth } from '../context/AuthContext';
 import { Users, Flame, DollarSign, GitBranch, CheckSquare, AlertCircle, TrendingUp, Activity, Phone, Mail, MessageSquare, FileText, Eye } from 'lucide-react';
 
 const activityIcon = { call:<Phone size={13}/>, sms:<MessageSquare size={13}/>, email:<Mail size={13}/>, note:<FileText size={13}/>, property_view:<Eye size={13}/>, docusign:<FileText size={13}/>, status_change:<Activity size={13}/> };
 const activityColor = { call:'bg-blue-100 text-blue-600', sms:'bg-green-100 text-green-600', email:'bg-purple-100 text-purple-600', note:'bg-yellow-100 text-yellow-600', property_view:'bg-indigo-100 text-indigo-600', docusign:'bg-orange-100 text-orange-600', status_change:'bg-gray-100 text-gray-600' };
 
-function StatCard({ icon: Icon, label, value, sub, color = 'blue', trend }) {
+function StatCard({ icon: Icon, label, value, sub, color = 'blue', trend, to }) {
   const colors = { blue:'bg-blue-50 text-blue-600', green:'bg-green-50 text-green-600', red:'bg-red-50 text-red-600', amber:'bg-amber-50 text-amber-600', purple:'bg-purple-50 text-purple-600' };
-  return (
-    <div className="card p-5">
+  const inner = (
+    <div className={`card p-5 transition-all ${to ? 'hover:shadow-md hover:-translate-y-0.5 cursor-pointer' : ''}`}>
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</p>
@@ -23,6 +24,7 @@ function StatCard({ icon: Icon, label, value, sub, color = 'blue', trend }) {
       {trend && <div className="flex items-center gap-1 mt-3 text-xs text-green-600 font-medium"><TrendingUp size={12}/>{trend}</div>}
     </div>
   );
+  return to ? <Link to={to}>{inner}</Link> : inner;
 }
 
 const sourceColors = ['bg-blue-500','bg-green-500','bg-purple-500','bg-amber-500','bg-red-500','bg-indigo-500','bg-pink-500'];
@@ -30,6 +32,7 @@ const sourceColors = ['bg-blue-500','bg-green-500','bg-purple-500','bg-amber-500
 export default function Dashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   useEffect(() => {
     dashboard.get().then(setData).finally(() => setLoading(false));
@@ -46,20 +49,20 @@ export default function Dashboard() {
       {/* Header */}
       <div>
         <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Welcome back, Sarah. Here's what's happening today.</p>
+        <p className="text-sm text-gray-500 mt-0.5">Welcome back, {user?.name?.split(' ')[0]}. Here's what's happening today.</p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={Users}       label="Total Leads"       value={stats.totalLeads.toLocaleString()} sub={`+${stats.newLeadsThisMonth} this month`} color="blue" trend="+12% vs last month" />
-        <StatCard icon={Flame}       label="Hot Leads"         value={stats.hotLeads}    sub="Need immediate follow-up" color="red" />
-        <StatCard icon={GitBranch}   label="Active Pipeline"   value={stats.activePipeline} sub={`${stats.underContract} under contract`} color="purple" />
-        <StatCard icon={DollarSign}  label="Pipeline Value"    value={`$${Math.round(stats.pipelineValue/1000)}K`} sub="Est. commission" color="green" trend="Commission potential" />
+        <StatCard icon={Users}       label="Total Leads"       value={stats.totalLeads.toLocaleString()} sub={`+${stats.newLeadsThisMonth} this month`} color="blue" trend="+12% vs last month" to="/leads" />
+        <StatCard icon={Flame}       label="Hot Leads"         value={stats.hotLeads}    sub="Need immediate follow-up" color="red"    to="/leads?temperature=Hot" />
+        <StatCard icon={GitBranch}   label="Active Pipeline"   value={stats.activePipeline} sub={`${stats.underContract} under contract`} color="purple" to="/pipeline" />
+        <StatCard icon={DollarSign}  label="Pipeline Value"    value={`$${Math.round(stats.pipelineValue/1000)}K`} sub="Est. commission" color="green" trend="Commission potential" to="/pipeline" />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <StatCard icon={CheckSquare} label="Tasks Due Today"   value={stats.tasksDueToday} sub="Open items" color="amber" />
-        <StatCard icon={AlertCircle} label="Overdue Tasks"     value={stats.overdueTasksCount} sub="Require attention" color="red" />
+        <StatCard icon={CheckSquare} label="Tasks Due Today"   value={stats.tasksDueToday} sub="Open items" color="amber" to="/leads" />
+        <StatCard icon={AlertCircle} label="Overdue Tasks"     value={stats.overdueTasksCount} sub="Require attention" color="red" to="/leads" />
       </div>
 
       {/* Charts + Activity */}
