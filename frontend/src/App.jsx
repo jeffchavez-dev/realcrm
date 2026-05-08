@@ -10,6 +10,8 @@ import LeadProfile from './pages/LeadProfile';
 import Pipeline from './pages/Pipeline';
 import Agents from './pages/Agents';
 import Integrations from './pages/Integrations';
+import MLS from './pages/MLS';
+import BackOffice from './pages/BackOffice';
 
 class ErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { error: null }; }
@@ -40,6 +42,8 @@ export default function App() {
               <Route path="leads"        element={<Leads />} />
               <Route path="leads/:id"    element={<LeadProfile />} />
               <Route path="pipeline"     element={<Pipeline />} />
+              <Route path="mls"          element={<MLS />} />
+              <Route path="backoffice"   element={<BackOffice />} />
               <Route path="agents"       element={<Agents />} />
               <Route path="integrations" element={<Integrations />} />
             </Route>

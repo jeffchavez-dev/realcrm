@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, GitBranch, UserCheck, Plug, Bell, Search, Home, LogOut, ChevronDown } from 'lucide-react';
+import { LayoutDashboard, Users, GitBranch, UserCheck, Plug, Bell, Search, Home, LogOut, ChevronDown, MapPin, FileSignature } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const nav = [
   { to:'/dashboard',    icon: LayoutDashboard, label:'Dashboard' },
   { to:'/leads',        icon: Users,           label:'Leads' },
   { to:'/pipeline',     icon: GitBranch,       label:'Pipeline' },
+  { to:'/mls',          icon: MapPin,          label:'MLS / IDX' },
+  { to:'/backoffice',   icon: FileSignature,   label:'Back Office' },
   { to:'/agents',       icon: UserCheck,       label:'Agents' },
   { to:'/integrations', icon: Plug,            label:'Integrations' },
 ];
