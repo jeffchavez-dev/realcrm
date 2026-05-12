@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import {
   Bed, Bath, Square, MapPin, Heart, ExternalLink, SlidersHorizontal,
@@ -17,6 +17,13 @@ L.Icon.Default.mergeOptions({
   iconUrl:       'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
   shadowUrl:     'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
+
+// Forces Leaflet to recalculate map size after mount (fixes blank/grey map on tab switch)
+function MapResizer() {
+  const map = useMap();
+  useEffect(() => { setTimeout(() => map.invalidateSize(), 150); }, [map]);
+  return null;
+}
 
 const CITIES = [
   'Hollywood', 'Lexington Park', 'California', 'Chaptico', 'Leonardtown',
@@ -264,7 +271,7 @@ export default function MLS() {
           <input value={addressSearch} onChange={e => setAddressSearch(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleAddressSearch()}
             className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-            placeholder="Search any address — listed or unlisted..."/>
+            placeholder="Type any address (e.g. 123 Oak St) — shows listing or off-market CMA options"/>
         </div>
         <button onClick={handleAddressSearch}
           className="px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors">
@@ -342,6 +349,7 @@ export default function MLS() {
           </div>
           <div style={{ height: 520 }}>
             <MapContainer center={mapCenter} zoom={10} style={{ height:'100%', width:'100%' }} scrollWheelZoom={true}>
+              <MapResizer />
               <TileLayer
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 attribution='&copy; <a href="https://openstreetmap.org">OpenStreetMap</a>'

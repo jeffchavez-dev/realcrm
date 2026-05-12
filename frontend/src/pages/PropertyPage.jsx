@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import {
   ArrowLeft, Bed, Bath, Square, MapPin, Heart, Share2, Printer,
@@ -8,6 +8,13 @@ import {
   Home, ExternalLink, Bell, BellOff, User, ChevronRight, Calculator
 } from 'lucide-react';
 import { leads as leadsApi } from '../api/client';
+
+// Forces Leaflet to recalculate size after mount
+function MapResizer() {
+  const map = useMap();
+  useEffect(() => { setTimeout(() => map.invalidateSize(), 150); }, [map]);
+  return null;
+}
 
 // Fix Leaflet default icon path issue with Vite
 delete L.Icon.Default.prototype._getIconUrl;
@@ -463,6 +470,7 @@ export default function PropertyPage() {
             </div>
             <div style={{ height: 240 }}>
               <MapContainer center={listing.coords} zoom={14} style={{ height:'100%', width:'100%' }} scrollWheelZoom={false}>
+                <MapResizer />
                 <TileLayer
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   attribution='&copy; <a href="https://openstreetmap.org">OpenStreetMap</a>'
