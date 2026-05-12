@@ -182,6 +182,7 @@ export default function LeadProfile() {
                 { key:'deals',    label:'Pipeline' },
                 { key:'buyer',    label:'🏠 Buyer Journey' },
                 { key:'seller',   label:'📋 Seller Journey' },
+                { key:'ealerts',  label:'🔔 E-Alerts' },
               ].map(t => (
                 <button key={t.key} onClick={() => setActiveTab(t.key)}
                   className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${activeTab===t.key ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
@@ -278,6 +279,9 @@ export default function LeadProfile() {
 
           {/* Seller Journey Tab */}
           {activeTab === 'seller' && <WorkflowTab type="seller" leadName={`${lead.firstName} ${lead.lastName}`} />}
+
+          {/* E-Alerts Tab */}
+          {activeTab === 'ealerts' && <EAlertsTab lead={lead} />}
         </div>
       </div>
     </div>
@@ -370,6 +374,216 @@ function WorkflowTab({ type, leadName }) {
             </button>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+// ── E-Alerts Tab ──────────────────────────────────────────────────────────────
+
+const MD_AREAS = ['Hollywood','Lexington Park','California MD','Chaptico','Leonardtown','Prince Frederick','Lusby','Chesapeake Beach','Waldorf','La Plata'];
+
+const SEND_FROM_OPTIONS = [
+  { value:'company', label:'Company Email (info@brokerage.com)' },
+  { value:'agent',   label:'Assigned Agent Name' },
+  { value:'billy',   label:'William Rabbitt (Broker)' },
+];
+
+const BLANK_ALERT = { name:'', areas:[], minPrice:'', maxPrice:'', minBeds:'', type:'', frequency:'Daily', sendFrom:'agent', active:true };
+
+function EAlertsTab({ lead }) {
+  const seedAlerts = lead.alerts?.length > 0 ? lead.alerts.map((a,i) => ({
+    id: i+1, name: a.name || 'Property Search', areas: a.city ? [a.city] : ['Hollywood'],
+    minPrice: a.minPrice || 350000, maxPrice: a.maxPrice || 650000,
+    minBeds: a.minBeds || 3, type: '', frequency: a.frequency || 'Daily',
+    sendFrom: 'agent', active: a.active !== false,
+  })) : [
+    { id:1, name:'Buyer Search — Primary', areas:['Hollywood','Lexington Park'], minPrice:400000, maxPrice:600000, minBeds:3, type:'Single Family', frequency:'Instant', sendFrom:'agent', active:true },
+  ];
+
+  const [alerts, setAlerts]     = useState(seedAlerts);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm]         = useState(BLANK_ALERT);
+  const [saved, setSaved]       = useState(false);
+
+  const setField   = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const toggleArea = (area) => setForm(f => ({
+    ...f, areas: f.areas.includes(area) ? f.areas.filter(a => a !== area) : [...f.areas, area],
+  }));
+
+  const saveAlert = () => {
+    if (!form.name || form.areas.length === 0) return;
+    setAlerts(a => [...a, { ...form, id: Date.now() }]);
+    setForm(BLANK_ALERT);
+    setShowForm(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
+  };
+
+  const toggleActive = (id) => setAlerts(a => a.map(x => x.id === id ? { ...x, active: !x.active } : x));
+  const deleteAlert  = (id) => setAlerts(a => a.filter(x => x.id !== id));
+
+  return (
+    <div className="card p-5 space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-sm font-bold text-gray-900">🔔 E-Alert Subscriptions</h2>
+          <p className="text-xs text-gray-400 mt-0.5">Auto-send matching listings to {lead.firstName} via email or SMS</p>
+        </div>
+        <button onClick={() => setShowForm(s => !s)}
+          className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white text-xs font-semibold rounded-xl hover:bg-blue-700 transition-colors">
+          + New E-Alert
+        </button>
+      </div>
+
+      {saved && (
+        <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-2.5 text-sm">
+          <CheckSquare size={15}/> E-Alert activated — {lead.firstName} will receive matching listings.
+        </div>
+      )}
+
+      {showForm && (
+        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 space-y-4">
+          <p className="text-sm font-bold text-blue-900">Configure New E-Alert</p>
+          <div>
+            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5 block">Alert Name</label>
+            <input value={form.name} onChange={e => setField('name', e.target.value)}
+              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="e.g. Primary Home Search"/>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5 block">Target Areas</label>
+            <div className="flex flex-wrap gap-2">
+              {MD_AREAS.map(area => (
+                <button key={area} type="button" onClick={() => toggleArea(area)}
+                  className={`px-2.5 py-1 text-xs font-medium rounded-full border transition-colors ${form.areas.includes(area) ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'}`}>
+                  {area}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div>
+              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1 block">Min Price</label>
+              <select value={form.minPrice} onChange={e => setField('minPrice', e.target.value)}
+                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">No Min</option>
+                {[250000,300000,350000,400000,450000,500000,600000].map(p => (
+                  <option key={p} value={p}>${(p/1000).toFixed(0)}K</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1 block">Max Price</label>
+              <select value={form.maxPrice} onChange={e => setField('maxPrice', e.target.value)}
+                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">No Max</option>
+                {[400000,500000,600000,700000,800000,1000000].map(p => (
+                  <option key={p} value={p}>${(p/1000).toFixed(0)}K</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1 block">Min Beds</label>
+              <select value={form.minBeds} onChange={e => setField('minBeds', e.target.value)}
+                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">Any</option>
+                {[1,2,3,4,5].map(n => <option key={n} value={n}>{n}+</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1 block">Type</label>
+              <select value={form.type} onChange={e => setField('type', e.target.value)}
+                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">All</option>
+                {['Single Family','Condo','Townhouse','New Construction'].map(t => <option key={t}>{t}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1 block">Frequency</label>
+              <div className="flex gap-2">
+                {['Instant','Daily','Weekly'].map(f => (
+                  <button key={f} type="button" onClick={() => setField('frequency', f)}
+                    className={`flex-1 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${form.frequency===f ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200'}`}>
+                    {f}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1 block">Send From</label>
+              <select value={form.sendFrom} onChange={e => setField('sendFrom', e.target.value)}
+                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                {SEND_FROM_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button onClick={saveAlert} disabled={!form.name || form.areas.length === 0}
+              className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+              ✓ Activate E-Alert
+            </button>
+            <button onClick={() => { setShowForm(false); setForm(BLANK_ALERT); }}
+              className="px-5 py-2.5 border border-gray-200 text-gray-600 text-sm rounded-xl hover:bg-gray-50 transition-colors">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-3">
+        {alerts.length === 0 && (
+          <div className="text-center py-8 text-gray-400">
+            <Bell size={32} className="mx-auto mb-2 opacity-30"/>
+            <p className="text-sm">No e-alerts yet. Click "+ New E-Alert" to get started.</p>
+          </div>
+        )}
+        {alerts.map(a => (
+          <div key={a.id} className={`rounded-xl border p-4 ${a.active ? 'border-blue-200 bg-blue-50/40' : 'border-gray-200 bg-gray-50 opacity-60'}`}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${a.active ? 'bg-blue-600' : 'bg-gray-300'}`}>
+                  <Bell size={14} className="text-white"/>
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-900">{a.name}</p>
+                  <div className="flex flex-wrap gap-1.5 mt-1">
+                    {a.areas.slice(0,3).map(area => (
+                      <span key={area} className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">{area}</span>
+                    ))}
+                    {a.areas.length > 3 && <span className="text-[10px] text-gray-400">+{a.areas.length-3} more</span>}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1.5">
+                    {a.minPrice ? `$${(a.minPrice/1000).toFixed(0)}K` : 'No min'} – {a.maxPrice ? `$${(a.maxPrice/1000).toFixed(0)}K` : 'No max'}
+                    {a.minBeds ? ` · ${a.minBeds}+ beds` : ''}
+                    {a.type ? ` · ${a.type}` : ''}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${a.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                  {a.active ? '● Active' : '○ Paused'}
+                </span>
+                <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-1 rounded-full">{a.frequency}</span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between mt-3 pt-3 border-t border-blue-100">
+              <p className="text-[10px] text-gray-400">
+                From: {SEND_FROM_OPTIONS.find(o => o.value === a.sendFrom)?.label}
+              </p>
+              <div className="flex gap-3">
+                <button onClick={() => toggleActive(a.id)} className="text-xs text-blue-600 hover:underline font-medium">
+                  {a.active ? 'Pause' : 'Activate'}
+                </button>
+                <button onClick={() => deleteAlert(a.id)} className="text-xs text-red-500 hover:underline font-medium">
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

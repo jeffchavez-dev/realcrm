@@ -1,56 +1,114 @@
 import React, { useState, useEffect } from 'react';
-import { Bed, Bath, Square, MapPin, Heart, ExternalLink, SlidersHorizontal, Home, TrendingUp, RefreshCw, X, Search, CheckCircle, Hammer, Clock, ChevronRight } from 'lucide-react';
-import { leads as leadsApi } from '../api/client';
 import { useNavigate } from 'react-router-dom';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import {
+  Bed, Bath, Square, MapPin, Heart, ExternalLink, SlidersHorizontal,
+  Home, TrendingUp, X, Search, CheckCircle, Hammer, Clock, ChevronRight,
+  Bell, BellOff, Phone, Mail, Map, List, LayoutGrid, AlertCircle
+} from 'lucide-react';
+import { leads as leadsApi } from '../api/client';
+import { LISTINGS } from './PropertyPage';
 
-// ── Southern Maryland + Metro DC cities (matching client market) ──────
+// Fix Leaflet icon in Vite
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl:       'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl:     'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+});
+
 const CITIES = [
   'Hollywood', 'Lexington Park', 'California', 'Chaptico', 'Leonardtown',
   'Prince Frederick', 'Lusby', 'Chesapeake Beach', 'Waldorf', 'La Plata',
-  'Bethesda', 'Chevy Chase', 'Silver Spring', 'Rockville', 'Potomac',
 ];
 const PROPERTY_TYPES = ['Single Family', 'Condo', 'Townhouse', 'Multi-Family', 'New Construction'];
 
-// ── Neighborhood quick-filter cards ──────────────────────────────────
 const NEIGHBORHOODS = [
-  { name:'Hollywood', county:'St. Mary\'s Co.', slug:'Hollywood', listings:14, img:'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=300&q=80', avgPrice:'$485K' },
-  { name:'Chaptico',  county:'St. Mary\'s Co.', slug:'Chaptico',  listings:6,  img:'https://images.unsplash.com/photo-1572120360610-d971b9d7767c?w=300&q=80', avgPrice:'$390K' },
-  { name:'Lexington Park', county:'St. Mary\'s Co.', slug:'Lexington Park', listings:22, img:'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=300&q=80', avgPrice:'$420K' },
-  { name:'Prince Frederick', county:'Calvert Co.', slug:'Prince Frederick', listings:18, img:'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=300&q=80', avgPrice:'$510K' },
-  { name:'Lusby',     county:'Calvert Co.',     slug:'Lusby',     listings:11, img:'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=300&q=80', avgPrice:'$455K' },
-  { name:'Waldorf',   county:'Charles Co.',     slug:'Waldorf',   listings:31, img:'https://images.unsplash.com/photo-1605146769289-440113cc3d00?w=300&q=80', avgPrice:'$375K' },
-  { name:'La Plata',  county:'Charles Co.',     slug:'La Plata',  listings:9,  img:'https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?w=300&q=80', avgPrice:'$495K' },
-  { name:'California MD', county:'St. Mary\'s Co.', slug:'California', listings:27, img:'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=300&q=80', avgPrice:'$440K' },
+  { name:'Hollywood',      county:"St. Mary's Co.", slug:'Hollywood',      listings:14, img:'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=300&q=80', avgPrice:'$485K' },
+  { name:'Chaptico',       county:"St. Mary's Co.", slug:'Chaptico',       listings:6,  img:'https://images.unsplash.com/photo-1572120360610-d971b9d7767c?w=300&q=80', avgPrice:'$390K' },
+  { name:'Lexington Park', county:"St. Mary's Co.", slug:'Lexington Park', listings:22, img:'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=300&q=80', avgPrice:'$420K' },
+  { name:'Prince Frederick',county:'Calvert Co.',   slug:'Prince Frederick',listings:18, img:'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=300&q=80', avgPrice:'$510K' },
+  { name:'Lusby',          county:'Calvert Co.',    slug:'Lusby',          listings:11, img:'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=300&q=80', avgPrice:'$455K' },
+  { name:'Waldorf',        county:'Charles Co.',    slug:'Waldorf',        listings:31, img:'https://images.unsplash.com/photo-1605146769289-440113cc3d00?w=300&q=80', avgPrice:'$375K' },
+  { name:'La Plata',       county:'Charles Co.',    slug:'La Plata',       listings:9,  img:'https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?w=300&q=80', avgPrice:'$495K' },
+  { name:'California MD',  county:"St. Mary's Co.", slug:'California',     listings:27, img:'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=300&q=80', avgPrice:'$440K' },
 ];
 
-// ── Listings (Southern MD focus + Coming Soon + New Construction) ─────
-const MOCK_LISTINGS = [
-  { mlsId:'BRIGHT-2001234', address:'412 Elm Street', city:'Hollywood', state:'MD', zip:'20636', price:489000, beds:4, baths:2.5, sqft:2840, status:'Active', daysOnMarket:12, img:'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&q=80', type:'Single Family', description:'Stunning colonial on quiet street. Updated kitchen, hardwood throughout. Large fenced yard.' },
-  { mlsId:'BRIGHT-2001305', address:'22801 Three Notch Rd', city:'California', state:'MD', zip:'20619', price:425000, beds:4, baths:3, sqft:3100, status:'Active', daysOnMarket:5, img:'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=400&q=80', type:'Single Family', description:'Move-in ready. Large backyard, finished basement, 2-car garage. Excellent schools.' },
-  { mlsId:'BRIGHT-2001756', address:'7 Mill Pond Ct', city:'Chaptico', state:'MD', zip:'20621', price:365000, beds:3, baths:2, sqft:1480, status:'Active', daysOnMarket:18, img:'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400&q=80', type:'Townhouse', description:'Charming townhouse in the heart of Chaptico. Updated kitchen, private patio, community pool.' },
-  { mlsId:'BRIGHT-2002011', address:'45 Bay Custom Way', city:'Lexington Park', state:'MD', zip:'20653', price:589000, beds:4, baths:3.5, sqft:3350, status:'Coming Soon', daysOnMarket:0, img:'https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?w=400&q=80', type:'New Construction', description:'Bay Custom Homes — brand new build. Open floor plan, chef kitchen, smart home tech. Estimated delivery Sept 2026.', newConstruction:true },
-  { mlsId:'BRIGHT-2002178', address:'310 Leisure Shores Dr', city:'Lusby', state:'MD', zip:'20657', price:415000, beds:3, baths:2, sqft:1650, status:'Active', daysOnMarket:22, img:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80', type:'Single Family', description:'Waterfront community views. Boat ramp access, community amenities. Recent roof and HVAC.' },
-  { mlsId:'BRIGHT-2002344', address:'9821 Crain Highway', city:'La Plata', state:'MD', zip:'20646', price:525000, beds:5, baths:4, sqft:4200, status:'Active', daysOnMarket:7, img:'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&q=80', type:'Single Family', description:'Luxury home on 2 acres. In-ground pool, 3-car garage, guest suite. Backs to woods.' },
-  { mlsId:'BRIGHT-2002501', address:'1820 Smallwood Dr W #302', city:'Waldorf', state:'MD', zip:'20603', price:289000, beds:2, baths:2, sqft:1100, status:'Active', daysOnMarket:31, img:'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=400&q=80', type:'Condo', description:'Modern condo near shopping and dining. Balcony, in-unit laundry, assigned parking.' },
-  { mlsId:'BRIGHT-2002677', address:'100 Prince Frederick Blvd', city:'Prince Frederick', state:'MD', zip:'20678', price:479000, beds:4, baths:3, sqft:2600, status:'Coming Soon', daysOnMarket:0, img:'https://images.unsplash.com/photo-1605146769289-440113cc3d00?w=400&q=80', type:'Single Family', description:'Coming soon to Calvert County. Beautifully maintained colonial with gourmet kitchen and 3-car garage.' },
-  { mlsId:'BRIGHT-2002800', address:'55 Harbor View Ln', city:'Chesapeake Beach', state:'MD', zip:'20732', price:649000, beds:4, baths:3.5, sqft:3100, status:'Active', daysOnMarket:4, img:'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&q=80', type:'Single Family', description:'Chesapeake Bay views. Private dock access, open concept, master suite with spa bath.' },
-  { mlsId:'BRIGHT-2002900', address:'12 Bay Custom Circle', city:'Hollywood', state:'MD', zip:'20636', price:619000, beds:5, baths:4, sqft:3800, status:'Coming Soon', daysOnMarket:0, img:'https://images.unsplash.com/photo-1572120360610-d971b9d7767c?w=400&q=80', type:'New Construction', description:'Bay Custom Homes flagship model. 5BR/4BA, quartz counters, LVP flooring, 2-car garage. Est. delivery Oct 2026.', newConstruction:true },
-];
+function formatPrice(p) {
+  if (p >= 1000000) return `$${(p/1000000).toFixed(2)}M`;
+  return `$${(p/1000).toFixed(0)}K`;
+}
 
+function StatusBadge({ status, newConstruction }) {
+  if (newConstruction) return (
+    <span className="flex items-center gap-1 bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+      <Hammer size={10}/>New Construction
+    </span>
+  );
+  if (status === 'Coming Soon') return (
+    <span className="flex items-center gap-1 bg-purple-600 text-white text-xs font-bold px-2 py-1 rounded-full">
+      <Clock size={10}/>Coming Soon
+    </span>
+  );
+  return <span className="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">{status}</span>;
+}
+
+// ── Non-Listed Property panel ──────────────────────────────────────────────
+function NonListedPanel({ address, onClose }) {
+  return (
+    <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
+      <div className="flex items-start gap-4">
+        <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+          <AlertCircle size={20} className="text-amber-600"/>
+        </div>
+        <div className="flex-1">
+          <p className="font-bold text-amber-900 text-sm">"{address}" is not currently listed on Bright MLS</p>
+          <p className="text-xs text-amber-700 mt-1">This property may be off-market, privately listed, or the owner may not know its current value. Here's what you can do:</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+            <div className="bg-white rounded-xl border border-amber-200 p-4 text-center">
+              <Home size={20} className="text-blue-600 mx-auto mb-2"/>
+              <p className="text-sm font-bold text-gray-900 mb-1">Get Home Value</p>
+              <p className="text-xs text-gray-500 mb-3">Find out what this property is worth today</p>
+              <button className="w-full text-xs font-semibold bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                Request Free CMA
+              </button>
+            </div>
+            <div className="bg-white rounded-xl border border-amber-200 p-4 text-center">
+              <TrendingUp size={20} className="text-green-600 mx-auto mb-2"/>
+              <p className="text-sm font-bold text-gray-900 mb-1">Market Report</p>
+              <p className="text-xs text-gray-500 mb-3">See recent sales & trends for this area</p>
+              <button className="w-full text-xs font-semibold bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors">
+                View Area Report
+              </button>
+            </div>
+            <div className="bg-white rounded-xl border border-amber-200 p-4 text-center">
+              <Phone size={20} className="text-purple-600 mx-auto mb-2"/>
+              <p className="text-sm font-bold text-gray-900 mb-1">Talk to an Agent</p>
+              <p className="text-xs text-gray-500 mb-3">Get expert advice on this off-market property</p>
+              <button className="w-full text-xs font-semibold bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition-colors">
+                Schedule Consultation
+              </button>
+            </div>
+          </div>
+        </div>
+        <button onClick={onClose} className="text-amber-400 hover:text-amber-700 flex-shrink-0"><X size={16}/></button>
+      </div>
+    </div>
+  );
+}
+
+// ── Assign Modal ───────────────────────────────────────────────────────────
 function AssignModal({ listing, onClose }) {
   const [allLeads, setAllLeads] = useState([]);
   const [query, setQuery]       = useState('');
   const [assigned, setAssigned] = useState(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    leadsApi.list({ limit: 50 }).then(d => setAllLeads(d.leads || []));
-  }, []);
-
+  useEffect(() => { leadsApi.list({ limit: 50 }).then(d => setAllLeads(d.leads || [])); }, []);
   const filtered = allLeads.filter(l =>
     `${l.firstName} ${l.lastName} ${l.email}`.toLowerCase().includes(query.toLowerCase())
   );
-
   const handleAssign = (lead) => {
     setAssigned(lead);
     setTimeout(() => { onClose(); navigate(`/leads/${lead.id}`); }, 1500);
@@ -63,35 +121,30 @@ function AssignModal({ listing, onClose }) {
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <div>
             <h2 className="text-base font-bold text-gray-900">Assign Property to Lead</h2>
-            <p className="text-xs text-gray-400 mt-0.5 truncate max-w-xs">{listing.address}, {listing.city} · {formatPrice(listing.price)}</p>
+            <p className="text-xs text-gray-400 mt-0.5 truncate">{listing.address}, {listing.city} · {formatPrice(listing.price)}</p>
           </div>
-          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
-            <X size={16}/>
-          </button>
+          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg"><X size={16}/></button>
         </div>
         {assigned ? (
-          <div className="flex flex-col items-center justify-center py-12 px-6">
+          <div className="flex flex-col items-center justify-center py-12">
             <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mb-3">
               <CheckCircle size={28} className="text-green-600"/>
             </div>
             <p className="font-semibold text-gray-900">Property assigned!</p>
             <p className="text-sm text-gray-500 mt-1">{listing.address} → {assigned.firstName} {assigned.lastName}</p>
-            <p className="text-xs text-gray-400 mt-1">Opening lead profile...</p>
           </div>
         ) : (
           <>
             <div className="px-4 py-3 border-b border-gray-100">
               <div className="relative">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"/>
-                <input value={query} onChange={e => setQuery(e.target.value)}
+                <input value={query} onChange={e => setQuery(e.target.value)} autoFocus
                   className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Search leads by name or email..." autoFocus/>
+                  placeholder="Search leads..."/>
               </div>
             </div>
             <div className="overflow-y-auto flex-1">
-              {filtered.length === 0 ? (
-                <p className="text-center text-gray-400 text-sm py-8">No leads found</p>
-              ) : filtered.map(lead => (
+              {filtered.map(lead => (
                 <button key={lead.id} onClick={() => handleAssign(lead)}
                   className="w-full flex items-center gap-3 px-5 py-3 hover:bg-blue-50 transition-colors text-left group border-b border-gray-50">
                   <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
@@ -99,12 +152,13 @@ function AssignModal({ listing, onClose }) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-900 group-hover:text-blue-700">{lead.firstName} {lead.lastName}</p>
-                    <p className="text-xs text-gray-400">{lead.email} {lead.budget ? `· $${(lead.budget/1000).toFixed(0)}K budget` : ''}</p>
+                    <p className="text-xs text-gray-400">{lead.email}{lead.budget ? ` · $${(lead.budget/1000).toFixed(0)}K budget` : ''}</p>
                   </div>
                   <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${
                     lead.temperature === 'Hot' ? 'bg-red-100 text-red-700' :
-                    lead.temperature === 'Warm' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
-                  }`}>{lead.temperature}</span>
+                    lead.temperature === 'Warm' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
+                    {lead.temperature}
+                  </span>
                 </button>
               ))}
             </div>
@@ -115,40 +169,22 @@ function AssignModal({ listing, onClose }) {
   );
 }
 
-function formatPrice(p) {
-  if (p >= 1000000) return `$${(p/1000000).toFixed(2)}M`;
-  return `$${(p/1000).toFixed(0)}K`;
-}
-
-function StatusBadge({ status, newConstruction }) {
-  if (newConstruction || status === 'New Construction') {
-    return (
-      <span className="flex items-center gap-1 bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-        <Hammer size={10}/>New Construction
-      </span>
-    );
-  }
-  if (status === 'Coming Soon') {
-    return (
-      <span className="flex items-center gap-1 bg-purple-600 text-white text-xs font-bold px-2 py-1 rounded-full">
-        <Clock size={10}/>Coming Soon
-      </span>
-    );
-  }
-  return <span className="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">{status}</span>;
-}
-
+// ── Main MLS Component ─────────────────────────────────────────────────────
 export default function MLS() {
-  const [filters, setFilters]             = useState({ city: '', minPrice: '', maxPrice: '', minBeds: '', type: '' });
+  const navigate = useNavigate();
+  const [filters, setFilters]             = useState({ city:'', minPrice:'', maxPrice:'', minBeds:'', type:'' });
   const [saved, setSaved]                 = useState(new Set());
+  const [watching, setWatching]           = useState(new Set());
   const [showFilters, setShowFilters]     = useState(false);
   const [assignListing, setAssignListing] = useState(null);
   const [activeNeighborhood, setActiveNeighborhood] = useState(null);
-  const [view, setView]                   = useState('all'); // 'all' | 'neighborhoods'
+  const [view, setView]                   = useState('grid'); // 'grid' | 'neighborhoods' | 'map'
+  const [addressSearch, setAddressSearch] = useState('');
+  const [nonListedAddress, setNonListedAddress] = useState(null);
 
   const setFilter = (k, v) => setFilters(f => ({ ...f, [k]: v }));
 
-  const listings = MOCK_LISTINGS.filter(l => {
+  const listings = LISTINGS.filter(l => {
     if (activeNeighborhood && l.city !== activeNeighborhood) return false;
     if (filters.city && l.city !== filters.city) return false;
     if (filters.minPrice && l.price < Number(filters.minPrice)) return false;
@@ -159,27 +195,32 @@ export default function MLS() {
     return true;
   });
 
-  const toggleSave = (id) => setSaved(s => {
-    const n = new Set(s);
-    n.has(id) ? n.delete(id) : n.add(id);
-    return n;
-  });
+  const toggleSave  = (id) => setSaved(s => { const n=new Set(s); n.has(id)?n.delete(id):n.add(id); return n; });
+  const toggleWatch = (id) => setWatching(s => { const n=new Set(s); n.has(id)?n.delete(id):n.add(id); return n; });
 
-  const comingSoonCount   = MOCK_LISTINGS.filter(l => l.status === 'Coming Soon').length;
-  const newConstructionCount = MOCK_LISTINGS.filter(l => l.newConstruction).length;
+  const handleAddressSearch = () => {
+    const q = addressSearch.trim().toLowerCase();
+    if (!q) return;
+    const match = LISTINGS.find(l => l.address.toLowerCase().includes(q) || l.city.toLowerCase().includes(q));
+    if (match) { navigate(`/property/${match.mlsId}`); }
+    else { setNonListedAddress(addressSearch); }
+  };
+
+  const comingSoonCount      = LISTINGS.filter(l => l.status === 'Coming Soon').length;
+  const newConstructionCount = LISTINGS.filter(l => l.newConstruction).length;
+  const mapCenter            = [38.45, -76.65];
 
   return (
     <div className="p-6 space-y-6">
       {assignListing && <AssignModal listing={assignListing} onClose={() => setAssignListing(null)} />}
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <div className="flex items-center gap-3 mb-1">
             <h1 className="text-2xl font-bold text-gray-900">MLS Property Search</h1>
             <span className="flex items-center gap-1.5 bg-green-50 text-green-700 border border-green-200 text-xs font-semibold px-2.5 py-1 rounded-full">
-              <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"/>
-              Bright MLS Connected
+              <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"/>Bright MLS Connected
             </span>
           </div>
           <p className="text-sm text-gray-500">
@@ -188,20 +229,24 @@ export default function MLS() {
             {listings.length} listings
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2">
-            <img src="https://www.brightmls.com/favicon.ico" className="w-4 h-4" onError={e => e.target.style.display='none'} />
             <span className="text-xs font-bold text-gray-700">Bright MLS</span>
             <span className="text-xs text-gray-400">Mid-Atlantic IDX</span>
           </div>
+          {/* View toggles */}
           <div className="flex bg-gray-100 rounded-xl p-1">
-            <button onClick={() => setView('all')}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${view==='all' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
-              All Listings
+            <button onClick={() => setView('grid')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${view==='grid' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
+              <LayoutGrid size={13}/>Grid
             </button>
             <button onClick={() => setView('neighborhoods')}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${view==='neighborhoods' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
-              Neighborhoods
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${view==='neighborhoods' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
+              <List size={13}/>Areas
+            </button>
+            <button onClick={() => setView('map')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${view==='map' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
+              <Map size={13}/>Map
             </button>
           </div>
           <button onClick={() => setShowFilters(f => !f)}
@@ -210,6 +255,26 @@ export default function MLS() {
           </button>
         </div>
       </div>
+
+      {/* Address / Non-Listed Search */}
+      <div className="flex gap-3">
+        <div className="relative flex-1 max-w-lg">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"/>
+          <input value={addressSearch} onChange={e => setAddressSearch(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleAddressSearch()}
+            className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            placeholder="Search any address — listed or unlisted..."/>
+        </div>
+        <button onClick={handleAddressSearch}
+          className="px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors">
+          Search
+        </button>
+      </div>
+
+      {/* Non-listed property banner */}
+      {nonListedAddress && (
+        <NonListedPanel address={nonListedAddress} onClose={() => setNonListedAddress(null)} />
+      )}
 
       {/* Quick-filter pills */}
       <div className="flex items-center gap-2 flex-wrap">
@@ -221,13 +286,14 @@ export default function MLS() {
           className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full border transition-colors ${filters.type==='New Construction' ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-gray-600 border-gray-200 hover:border-amber-300'}`}>
           <Hammer size={11}/>New Construction ({newConstructionCount})
         </button>
-        <button onClick={() => { setActiveNeighborhood(null); setFilters({ city:'', minPrice:'', maxPrice:'', minBeds:'', type:'' }); }}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full border transition-colors bg-white text-gray-600 border-gray-200 hover:border-purple-300">
+        <button onClick={() => { setActiveNeighborhood(null); setFilters({ city:'', minPrice:'', maxPrice:'', minBeds:'', type:'Coming Soon' }); }}
+          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full border transition-colors ${filters.type==='Coming Soon' ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-gray-600 border-gray-200 hover:border-purple-300'}`}>
           <Clock size={11}/>Coming Soon ({comingSoonCount})
         </button>
         <span className="h-4 w-px bg-gray-200"/>
         {NEIGHBORHOODS.slice(0,5).map(n => (
-          <button key={n.slug} onClick={() => { setActiveNeighborhood(n.name === activeNeighborhood ? null : n.name); setFilters(f => ({...f, type:'', city:''})); }}
+          <button key={n.slug}
+            onClick={() => { setActiveNeighborhood(n.name === activeNeighborhood ? null : n.name); setFilters(f => ({...f, type:'', city:''})); }}
             className={`px-3 py-1.5 text-xs font-semibold rounded-full border transition-colors ${activeNeighborhood===n.name ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'}`}>
             {n.name}
           </button>
@@ -240,7 +306,7 @@ export default function MLS() {
           <h2 className="text-base font-bold text-gray-900 mb-4">Browse by Neighborhood</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {NEIGHBORHOODS.map(n => (
-              <button key={n.slug} onClick={() => { setActiveNeighborhood(n.name); setView('all'); }}
+              <button key={n.slug} onClick={() => { setActiveNeighborhood(n.name); setView('grid'); }}
                 className="group bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-md transition-all text-left">
                 <div className="relative h-28 overflow-hidden bg-gray-100">
                   <img src={n.img} alt={n.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"/>
@@ -263,6 +329,44 @@ export default function MLS() {
         </div>
       )}
 
+      {/* ── MAP VIEW ── */}
+      {view === 'map' && (
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+            <p className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+              <Map size={15} className="text-blue-600"/>
+              Map View — {listings.length} properties
+            </p>
+            <p className="text-xs text-gray-400">Click a pin to view listing details</p>
+          </div>
+          <div style={{ height: 520 }}>
+            <MapContainer center={mapCenter} zoom={10} style={{ height:'100%', width:'100%' }} scrollWheelZoom={true}>
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://openstreetmap.org">OpenStreetMap</a>'
+              />
+              {listings.map(l => (
+                <Marker key={l.mlsId} position={l.coords}>
+                  <Popup>
+                    <div style={{ minWidth: 200 }}>
+                      <img src={l.img} alt={l.address} style={{ width:'100%', height:100, objectFit:'cover', borderRadius:8, marginBottom:8 }}/>
+                      <p style={{ fontWeight:'bold', fontSize:14, margin:'0 0 2px' }}>{formatPrice(l.price)}</p>
+                      <p style={{ fontSize:12, color:'#374151', margin:'0 0 2px' }}>{l.address}</p>
+                      <p style={{ fontSize:11, color:'#6b7280', margin:'0 0 6px' }}>{l.city}, MD · {l.beds}bd {l.baths}ba · {l.sqft.toLocaleString()} sqft</p>
+                      <button
+                        onClick={() => navigate(`/property/${l.mlsId}`)}
+                        style={{ width:'100%', padding:'6px', background:'#2563eb', color:'white', border:'none', borderRadius:8, fontSize:12, fontWeight:'bold', cursor:'pointer' }}>
+                        View Details →
+                      </button>
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
+            </MapContainer>
+          </div>
+        </div>
+      )}
+
       {/* Filter Bar */}
       {showFilters && (
         <div className="bg-white rounded-2xl border border-gray-200 p-5">
@@ -280,7 +384,7 @@ export default function MLS() {
               <select value={filters.minPrice} onChange={e => setFilter('minPrice', e.target.value)}
                 className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="">No Min</option>
-                {[250000,350000,450000,550000,650000,800000].map(p => <option key={p} value={p}>{formatPrice(p)}</option>)}
+                {[250000,350000,450000,550000,650000].map(p => <option key={p} value={p}>{formatPrice(p)}</option>)}
               </select>
             </div>
             <div>
@@ -288,7 +392,7 @@ export default function MLS() {
               <select value={filters.maxPrice} onChange={e => setFilter('maxPrice', e.target.value)}
                 className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="">No Max</option>
-                {[400000,550000,700000,900000,1200000,1500000].map(p => <option key={p} value={p}>{formatPrice(p)}</option>)}
+                {[400000,550000,700000,900000,1200000].map(p => <option key={p} value={p}>{formatPrice(p)}</option>)}
               </select>
             </div>
             <div>
@@ -314,28 +418,29 @@ export default function MLS() {
       )}
 
       {/* Stats Bar */}
-      <div className="grid grid-cols-4 gap-4">
-        {[
-          { label:'Avg List Price', value: formatPrice(Math.round(listings.filter(l=>l.status==='Active').reduce((a,l)=>a+l.price,0)/Math.max(listings.filter(l=>l.status==='Active').length,1))), icon: TrendingUp, color:'blue' },
-          { label:'Coming Soon', value: MOCK_LISTINGS.filter(l=>l.status==='Coming Soon').length, icon: Clock, color:'purple' },
-          { label:'New Construction', value: MOCK_LISTINGS.filter(l=>l.newConstruction).length, icon: Hammer, color:'amber' },
-          { label:'Saved Properties', value: saved.size, icon: Heart, color:'red' },
-        ].map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className={`bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3`}>
-            <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
-              color==='blue'?'bg-blue-50':color==='purple'?'bg-purple-50':color==='amber'?'bg-amber-50':'bg-red-50'}`}>
-              <Icon size={16} className={`${color==='blue'?'text-blue-600':color==='purple'?'text-purple-600':color==='amber'?'text-amber-600':'text-red-600'}`}/>
+      {view === 'grid' && (
+        <div className="grid grid-cols-4 gap-4">
+          {[
+            { label:'Avg List Price', value: formatPrice(Math.round(listings.filter(l=>l.status==='Active').reduce((a,l)=>a+l.price,0)/Math.max(listings.filter(l=>l.status==='Active').length,1))), icon: TrendingUp, color:'blue' },
+            { label:'Coming Soon',    value: LISTINGS.filter(l=>l.status==='Coming Soon').length, icon: Clock,    color:'purple' },
+            { label:'New Construction',value: LISTINGS.filter(l=>l.newConstruction).length,       icon: Hammer,   color:'amber' },
+            { label:'Saved Properties',value: saved.size,                                          icon: Heart,    color:'red' },
+          ].map(({ label, value, icon: Icon, color }) => (
+            <div key={label} className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3">
+              <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${color==='blue'?'bg-blue-50':color==='purple'?'bg-purple-50':color==='amber'?'bg-amber-50':'bg-red-50'}`}>
+                <Icon size={16} className={`${color==='blue'?'text-blue-600':color==='purple'?'text-purple-600':color==='amber'?'text-amber-600':'text-red-600'}`}/>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">{label}</p>
+                <p className="text-lg font-bold text-gray-900">{value}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs text-gray-500">{label}</p>
-              <p className="text-lg font-bold text-gray-900">{value}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Bay Custom Homes Banner */}
-      {(filters.type === 'New Construction' || !filters.type) && (
+      {view === 'grid' && (filters.type === 'New Construction' || !filters.type) && (
         <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-4">
           <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center flex-shrink-0">
             <Hammer size={18} className="text-white"/>
@@ -349,7 +454,7 @@ export default function MLS() {
       )}
 
       {/* Active neighborhood heading */}
-      {activeNeighborhood && (
+      {activeNeighborhood && view === 'grid' && (
         <div className="flex items-center gap-3">
           <h2 className="text-base font-bold text-gray-900">Homes in {activeNeighborhood}</h2>
           <button onClick={() => setActiveNeighborhood(null)} className="text-xs text-blue-600 hover:underline flex items-center gap-1">
@@ -358,71 +463,105 @@ export default function MLS() {
         </div>
       )}
 
-      {/* Listings Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-        {listings.map(l => (
-          <div key={l.mlsId} className={`bg-white rounded-2xl border overflow-hidden hover:shadow-md transition-shadow group ${l.newConstruction ? 'border-amber-200' : l.status==='Coming Soon' ? 'border-purple-200' : 'border-gray-200'}`}>
-            {/* Image */}
-            <div className="relative h-44 overflow-hidden bg-gray-100">
-              <img src={l.img} alt={l.address} className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${l.status==='Coming Soon' ? 'opacity-90' : ''}`} />
-              <div className="absolute top-3 left-3">
-                <StatusBadge status={l.status} newConstruction={l.newConstruction}/>
-              </div>
-              <div className="absolute top-3 right-3">
-                <button onClick={() => toggleSave(l.mlsId)}
-                  className={`w-8 h-8 rounded-full flex items-center justify-center backdrop-blur transition-colors ${saved.has(l.mlsId) ? 'bg-red-500 text-white' : 'bg-white/80 text-gray-600 hover:bg-red-50 hover:text-red-500'}`}>
-                  <Heart size={14} fill={saved.has(l.mlsId) ? 'currentColor' : 'none'}/>
-                </button>
-              </div>
-              {l.status === 'Active' && (
-                <div className="absolute bottom-3 left-3">
-                  <span className="bg-black/60 text-white text-xs px-2 py-0.5 rounded">{l.daysOnMarket} days on market</span>
+      {/* ── GRID VIEW ── */}
+      {view === 'grid' && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            {listings.map(l => (
+              <div key={l.mlsId}
+                className={`bg-white rounded-2xl border overflow-hidden hover:shadow-md transition-shadow group ${l.newConstruction ? 'border-amber-200' : l.status==='Coming Soon' ? 'border-purple-200' : 'border-gray-200'}`}>
+                {/* Image */}
+                <div className="relative h-44 overflow-hidden bg-gray-100">
+                  <img src={l.img} alt={l.address} className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${l.status==='Coming Soon' ? 'opacity-90' : ''}`}/>
+                  <div className="absolute top-3 left-3"><StatusBadge status={l.status} newConstruction={l.newConstruction}/></div>
+                  <div className="absolute top-3 right-3 flex gap-1.5">
+                    {/* Watch bell */}
+                    <button onClick={() => toggleWatch(l.mlsId)}
+                      title={watching.has(l.mlsId) ? 'Stop watching' : 'Watch for status changes'}
+                      className={`w-7 h-7 rounded-full flex items-center justify-center backdrop-blur transition-colors ${watching.has(l.mlsId) ? 'bg-blue-600 text-white' : 'bg-white/80 text-gray-500 hover:text-blue-600'}`}>
+                      {watching.has(l.mlsId) ? <Bell size={12}/> : <BellOff size={12}/>}
+                    </button>
+                    {/* Save heart */}
+                    <button onClick={() => toggleSave(l.mlsId)}
+                      className={`w-7 h-7 rounded-full flex items-center justify-center backdrop-blur transition-colors ${saved.has(l.mlsId) ? 'bg-red-500 text-white' : 'bg-white/80 text-gray-600 hover:text-red-500'}`}>
+                      <Heart size={12} fill={saved.has(l.mlsId) ? 'currentColor' : 'none'}/>
+                    </button>
+                  </div>
+                  {l.status === 'Active' && (
+                    <div className="absolute bottom-3 left-3">
+                      <span className="bg-black/60 text-white text-xs px-2 py-0.5 rounded">{l.daysOnMarket} DOM</span>
+                    </div>
+                  )}
+                  {l.status === 'Coming Soon' && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="bg-purple-600/80 text-white text-sm font-bold px-4 py-2 rounded-xl backdrop-blur">Coming Soon</span>
+                    </div>
+                  )}
                 </div>
-              )}
-              {l.status === 'Coming Soon' && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="bg-purple-600/80 text-white text-sm font-bold px-4 py-2 rounded-xl backdrop-blur">Coming Soon</span>
-                </div>
-              )}
-            </div>
 
-            {/* Details */}
-            <div className="p-4">
-              <div className="flex items-start justify-between mb-1">
-                <p className="text-xl font-bold text-gray-900">{formatPrice(l.price)}</p>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${l.newConstruction ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-blue-700'}`}>{l.newConstruction ? 'New Build' : l.type}</span>
+                {/* Details */}
+                <div className="p-4">
+                  <div className="flex items-start justify-between mb-1">
+                    <p className="text-xl font-bold text-gray-900">{formatPrice(l.price)}</p>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${l.newConstruction ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-blue-700'}`}>{l.newConstruction ? 'New Build' : l.type}</span>
+                  </div>
+                  <p className="text-sm font-medium text-gray-800 mb-0.5">{l.address}</p>
+                  <div className="flex items-center gap-1 text-xs text-gray-500 mb-3">
+                    <MapPin size={11}/> {l.city}, {l.state} {l.zip}
+                  </div>
+                  <div className="flex items-center gap-4 text-sm text-gray-600 mb-3 pb-3 border-b border-gray-100">
+                    <span className="flex items-center gap-1"><Bed size={13}/> {l.beds} bd</span>
+                    <span className="flex items-center gap-1"><Bath size={13}/> {l.baths} ba</span>
+                    <span className="flex items-center gap-1"><Square size={13}/> {l.sqft.toLocaleString()} sqft</span>
+                  </div>
+
+                  {/* Listing Agent */}
+                  <div className="flex items-center gap-2 mb-3 pb-3 border-b border-gray-100">
+                    <div className="w-6 h-6 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0">
+                      {l.agent.name.split(' ').map(n=>n[0]).join('')}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-gray-700 truncate">{l.agent.name}</p>
+                      <p className="text-[10px] text-gray-400 truncate">{l.agent.office}</p>
+                    </div>
+                    <div className="flex gap-1">
+                      <a href={`tel:${l.agent.phone}`} onClick={e => e.stopPropagation()}
+                        className="w-6 h-6 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 hover:bg-blue-100 transition-colors">
+                        <Phone size={11}/>
+                      </a>
+                      <a href={`mailto:${l.agent.email}`} onClick={e => e.stopPropagation()}
+                        className="w-6 h-6 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 hover:bg-blue-100 transition-colors">
+                        <Mail size={11}/>
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button onClick={() => setAssignListing(l)}
+                      className="flex-1 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+                      Assign to Lead
+                    </button>
+                    <button onClick={() => navigate(`/property/${l.mlsId}`)}
+                      className="px-3 py-2 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
+                      title="View full listing">
+                      <ExternalLink size={14}/>
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-gray-400 mt-2 text-center">MLS# {l.mlsId} · Bright MLS</p>
+                </div>
               </div>
-              <p className="text-sm font-medium text-gray-800 mb-0.5">{l.address}</p>
-              <div className="flex items-center gap-1 text-xs text-gray-500 mb-3">
-                <MapPin size={11}/> {l.city}, {l.state} {l.zip}
-              </div>
-              <div className="flex items-center gap-4 text-sm text-gray-600 mb-3 pb-3 border-b border-gray-100">
-                <span className="flex items-center gap-1"><Bed size={13}/> {l.beds} bd</span>
-                <span className="flex items-center gap-1"><Bath size={13}/> {l.baths} ba</span>
-                <span className="flex items-center gap-1"><Square size={13}/> {l.sqft.toLocaleString()} sqft</span>
-              </div>
-              <p className="text-xs text-gray-500 mb-4 line-clamp-2">{l.description}</p>
-              <div className="flex gap-2">
-                <button onClick={() => setAssignListing(l)} className="flex-1 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors">
-                  Assign to Lead
-                </button>
-                <button className="px-3 py-2 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
-                  <ExternalLink size={14}/>
-                </button>
-              </div>
-              <p className="text-[10px] text-gray-400 mt-2 text-center">MLS# {l.mlsId} · Bright MLS</p>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
 
-      {listings.length === 0 && (
-        <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
-          <Home size={40} className="text-gray-300 mx-auto mb-3"/>
-          <p className="text-gray-500 font-medium">No listings match your filters</p>
-          <button onClick={() => { setFilters({ city:'', minPrice:'', maxPrice:'', minBeds:'', type:'' }); setActiveNeighborhood(null); }}
-            className="mt-3 text-sm text-blue-600 hover:underline">Clear filters</button>
-        </div>
+          {listings.length === 0 && (
+            <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
+              <Home size={40} className="text-gray-300 mx-auto mb-3"/>
+              <p className="text-gray-500 font-medium">No listings match your filters</p>
+              <button onClick={() => { setFilters({ city:'', minPrice:'', maxPrice:'', minBeds:'', type:'' }); setActiveNeighborhood(null); }}
+                className="mt-3 text-sm text-blue-600 hover:underline">Clear filters</button>
+            </div>
+          )}
+        </>
       )}
 
       <p className="text-center text-xs text-gray-400">
