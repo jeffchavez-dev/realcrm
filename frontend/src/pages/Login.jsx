@@ -4,9 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { Home, Lock, Mail, Eye, EyeOff, AlertCircle } from 'lucide-react';
 
 const DEMO_USERS = [
-  { label: 'Admin (Jeff)', email: 'admin@realcrm.com',  password: 'admin123',   role: 'Full Access' },
-  { label: 'Sarah Johnson', email: 'sarah@realcrm.com', password: 'demo123',    role: 'Manager' },
-  { label: 'Billy (Guest)', email: 'billy@demo.com',    password: 'billy2026',  role: 'Guest Demo' },
+  { label: 'Admin (Jeff)', email: 'admin@realcrm.com', password: 'admin123',  role: 'Full Access' },
+  { label: 'Billy (Guest)', email: 'billy@demo.com',   password: 'billy2026', role: 'Guest Demo' },
 ];
 
 export default function Login() {
