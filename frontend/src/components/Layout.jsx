@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Users, GitBranch, UserCheck, Plug, Bell, Search, Home, LogOut, ChevronDown, MapPin, FileSignature, Phone, Mail, X, CheckCheck, Clock, Flame, AlertCircle, BookOpen } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { leads as leadsApi } from '../api/client';
@@ -180,8 +180,11 @@ function NotificationBell() {
 export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [searchOpen, setSearchOpen]     = useState(false);
+
+  const showSearch = location.pathname.startsWith('/leads') || location.pathname.startsWith('/agents');
   const userMenuRef = useRef(null);
 
   useEffect(() => {
@@ -252,7 +255,7 @@ export default function Layout() {
       {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-4 flex-shrink-0">
-          <GlobalSearch onClose={() => setSearchOpen(false)} />
+          {showSearch && <GlobalSearch onClose={() => setSearchOpen(false)} />}
           <div className="flex items-center gap-3 ml-auto">
             <NotificationBell />
             <div className="text-sm text-gray-600">

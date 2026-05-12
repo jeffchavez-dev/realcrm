@@ -6,13 +6,13 @@ import { FileText, Send, CheckCircle, Clock, AlertCircle, PenTool, Download, Eye
 const TEMPLATE_CONTENT = {
   purchase: {
     title: 'RESIDENTIAL PURCHASE AND SALE AGREEMENT',
-    subtitle: 'Maryland Standard Form — The Southside Group',
+    subtitle: 'Maryland Standard Form — Residential Real Estate',
     sections: [
       {
         heading: '1. PARTIES',
         body: `BUYER(S): _________________________________ ("Buyer")
 SELLER(S): _________________________________ ("Seller")
-BROKERAGE: The Southside Group, exploremdhomes.com
+BROKERAGE: _________________________________ ("Brokerage")
 LISTING AGENT: _________________________________ | License #: _________
 BUYER'S AGENT: _________________________________ | License #: _________`,
       },
@@ -73,12 +73,12 @@ Buyer's Agent: ___________________ Date: __________`,
 
   listing: {
     title: 'EXCLUSIVE RIGHT TO SELL LISTING AGREEMENT',
-    subtitle: 'The Southside Group · exploremdhomes.com · Southern Maryland',
+    subtitle: 'Maryland — Exclusive Right to Sell',
     sections: [
       {
         heading: '1. PARTIES & PROPERTY',
         body: `SELLER(S): _________________________________ ("Seller")
-BROKERAGE: The Southside Group ("Broker")
+BROKERAGE: _________________________________ ("Broker")
 LISTING AGENT: _________________________________ | MD License #: _________
 Property Address: _________________________________________________
 City: _________________________ County: _________________ State: MD  Zip: _______
@@ -134,19 +134,19 @@ MLS Entry: ☐ Immediate  ☐ Office Exclusive (max 5 days before Bright MLS)`,
 SELLER: ___________________________ Date: __________
 
 Listing Agent: ____________________ Date: __________
-Broker/Owner:  Billy Rabbitt, The Southside Group  Date: __________`,
+Broker/Owner: _________________________________ Date: __________`,
       },
     ],
   },
 
   'buyer-rep': {
     title: 'BUYER REPRESENTATION AGREEMENT',
-    subtitle: 'The Southside Group · Exclusive Buyer Agency',
+    subtitle: 'Exclusive Buyer Agency Agreement',
     sections: [
       {
         heading: '1. PARTIES',
         body: `BUYER(S): _________________________________ ("Buyer")
-BROKERAGE: The Southside Group ("Broker")
+BROKERAGE: _________________________________ ("Broker")
 BUYER'S AGENT: _________________________________ | MD License #: _________
 This Agreement is entered into as of: _________________________`,
       },
@@ -192,7 +192,7 @@ Pre-approved Lender: _________________________________ Amount: $_____________`,
 BUYER: ___________________________ Date: __________
 
 Buyer's Agent: ___________________ Date: __________
-Broker/Owner:  Billy Rabbitt, The Southside Group  Date: __________`,
+Broker/Owner: _________________________________ Date: __________`,
       },
     ],
   },
@@ -262,7 +262,7 @@ BUYER: ___________________________ Date: __________`,
 
   addendum: {
     title: 'CONTRACT ADDENDUM',
-    subtitle: 'Addendum to Residential Purchase Agreement — The Southside Group',
+    subtitle: 'Addendum to Residential Purchase Agreement',
     sections: [
       {
         heading: 'REFERENCE TO ORIGINAL CONTRACT',
@@ -310,13 +310,13 @@ Buyer's Agent: ___________________ Date: __________`,
 
   lease: {
     title: 'RESIDENTIAL LEASE AGREEMENT (ONE YEAR)',
-    subtitle: 'The Southside Group Property Management · Maryland',
+    subtitle: 'Maryland Residential Lease',
     sections: [
       {
         heading: '1. PARTIES & PREMISES',
         body: `LANDLORD: _________________________________ ("Landlord")
 TENANT(S): _________________________________ ("Tenant")
-Managed by: The Southside Group, exploremdhomes.com
+Managed by: _________________________________
 Rental Property Address: _________________________________________________
 City: _________________________ County: _________________ MD  Zip: _______
 Unit Type: ☐ Single-Family  ☐ Townhome  ☐ Apartment  ☐ Condo  Beds: ___ Baths: ___`,
@@ -379,7 +379,7 @@ TENANT: ___________________________ Date: __________
 TENANT: ___________________________ Date: __________
 
 LANDLORD / AGENT: ________________ Date: __________
-Property Manager: The Southside Group  Date: __________`,
+Property Manager: _________________________________ Date: __________`,
       },
     ],
   },
@@ -460,7 +460,7 @@ function DocPreviewModal({ template, onClose }) {
           <div className="max-w-2xl mx-auto bg-white shadow-sm rounded-xl border border-gray-200 p-8">
             {/* Doc header */}
             <div className="text-center mb-8 pb-6 border-b-2 border-gray-900">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">The Southside Group · exploremdhomes.com</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">Real Estate Document Template</p>
               <h2 className="text-xl font-bold text-gray-900 uppercase tracking-wide leading-snug">{content.title}</h2>
               <p className="text-xs text-gray-500 mt-1">{content.subtitle}</p>
             </div>
@@ -482,7 +482,7 @@ function DocPreviewModal({ template, onClose }) {
             {/* Footer */}
             <div className="mt-10 pt-6 border-t border-gray-200 text-center">
               <p className="text-[10px] text-gray-400">
-                DRAFT TEMPLATE — The Southside Group · exploremdhomes.com · Southern Maryland Real Estate
+                DRAFT TEMPLATE — For demonstration and customization purposes only
               </p>
               <p className="text-[10px] text-gray-400 mt-0.5">
                 This document is for informational purposes. Consult a licensed Maryland real estate attorney for legal advice.
@@ -505,7 +505,7 @@ function handleDownload(template) {
     '='.repeat(70),
     content.title,
     content.subtitle,
-    'The Southside Group · exploremdhomes.com · Southern Maryland Real Estate',
+    'Real Estate Document Template',
     '='.repeat(70),
     '',
     ...content.sections.flatMap(sec => [
@@ -515,7 +515,7 @@ function handleDownload(template) {
       '',
     ]),
     '='.repeat(70),
-    'DRAFT TEMPLATE — For use by The Southside Group agents only.',
+    'DRAFT TEMPLATE — For demonstration and customization purposes only.',
     'Consult a licensed Maryland real estate attorney for legal advice.',
     '='.repeat(70),
   ];
