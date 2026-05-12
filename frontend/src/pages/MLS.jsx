@@ -191,7 +191,8 @@ export default function MLS() {
     if (filters.maxPrice && l.price > Number(filters.maxPrice)) return false;
     if (filters.minBeds && l.beds < Number(filters.minBeds)) return false;
     if (filters.type === 'New Construction' && !l.newConstruction) return false;
-    else if (filters.type && filters.type !== 'New Construction' && l.type !== filters.type) return false;
+    else if (filters.type === 'Coming Soon' && l.status !== 'Coming Soon') return false;
+    else if (filters.type && filters.type !== 'New Construction' && filters.type !== 'Coming Soon' && l.type !== filters.type) return false;
     return true;
   });
 
@@ -469,20 +470,21 @@ export default function MLS() {
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
             {listings.map(l => (
               <div key={l.mlsId}
-                className={`bg-white rounded-2xl border overflow-hidden hover:shadow-md transition-shadow group ${l.newConstruction ? 'border-amber-200' : l.status==='Coming Soon' ? 'border-purple-200' : 'border-gray-200'}`}>
+                onClick={() => navigate(`/property/${l.mlsId}`)}
+                className={`bg-white rounded-2xl border overflow-hidden hover:shadow-md transition-shadow group cursor-pointer ${l.newConstruction ? 'border-amber-200' : l.status==='Coming Soon' ? 'border-purple-200' : 'border-gray-200'}`}>
                 {/* Image */}
                 <div className="relative h-44 overflow-hidden bg-gray-100">
                   <img src={l.img} alt={l.address} className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${l.status==='Coming Soon' ? 'opacity-90' : ''}`}/>
                   <div className="absolute top-3 left-3"><StatusBadge status={l.status} newConstruction={l.newConstruction}/></div>
                   <div className="absolute top-3 right-3 flex gap-1.5">
                     {/* Watch bell */}
-                    <button onClick={() => toggleWatch(l.mlsId)}
+                    <button onClick={e => { e.stopPropagation(); toggleWatch(l.mlsId); }}
                       title={watching.has(l.mlsId) ? 'Stop watching' : 'Watch for status changes'}
                       className={`w-7 h-7 rounded-full flex items-center justify-center backdrop-blur transition-colors ${watching.has(l.mlsId) ? 'bg-blue-600 text-white' : 'bg-white/80 text-gray-500 hover:text-blue-600'}`}>
                       {watching.has(l.mlsId) ? <Bell size={12}/> : <BellOff size={12}/>}
                     </button>
                     {/* Save heart */}
-                    <button onClick={() => toggleSave(l.mlsId)}
+                    <button onClick={e => { e.stopPropagation(); toggleSave(l.mlsId); }}
                       className={`w-7 h-7 rounded-full flex items-center justify-center backdrop-blur transition-colors ${saved.has(l.mlsId) ? 'bg-red-500 text-white' : 'bg-white/80 text-gray-600 hover:text-red-500'}`}>
                       <Heart size={12} fill={saved.has(l.mlsId) ? 'currentColor' : 'none'}/>
                     </button>
@@ -537,11 +539,11 @@ export default function MLS() {
                   </div>
 
                   <div className="flex gap-2">
-                    <button onClick={() => setAssignListing(l)}
+                    <button onClick={e => { e.stopPropagation(); setAssignListing(l); }}
                       className="flex-1 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors">
                       Assign to Lead
                     </button>
-                    <button onClick={() => navigate(`/property/${l.mlsId}`)}
+                    <button onClick={e => { e.stopPropagation(); navigate(`/property/${l.mlsId}`); }}
                       className="px-3 py-2 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
                       title="View full listing">
                       <ExternalLink size={14}/>
