@@ -5,7 +5,7 @@ import { Home, Lock, Mail, Eye, EyeOff, AlertCircle } from 'lucide-react';
 
 const DEMO_USERS = [
   { label: 'Admin (Jeff)', email: 'admin@realcrm.com', password: 'admin123',  role: 'Full Access' },
-  { label: 'Billy (Broker)', email: 'billy@demo.com',  password: 'billy2026', role: 'Broker' },
+  { label: 'Billy Rabbitt', email: 'billy@demo.com',  password: 'billy2026', role: 'Broker' },
 ];
 
 export default function Login() {

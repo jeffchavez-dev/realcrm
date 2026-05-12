@@ -195,7 +195,7 @@ export default function Layout() {
 
   const handleLogout = () => { logout(); navigate('/login'); };
   const initials = user?.name?.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase() || 'U';
-  const roleLabel = { admin:'Administrator', manager:'Manager', agent:'Agent', isa:'ISA' }[user?.role] || user?.role;
+  const roleLabel = { admin:'Administrator', manager:'Manager', agent:'Agent', isa:'ISA', broker:'Broker' }[user?.role] || user?.role;
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
