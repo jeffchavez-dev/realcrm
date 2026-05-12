@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, User, Tag, ArrowRight, Search, BookOpen, TrendingUp, Home, DollarSign, MapPin } from 'lucide-react';
+import { Calendar, User, ArrowRight, Search, BookOpen, TrendingUp, Home, DollarSign, MapPin, X, Clock, Tag } from 'lucide-react';
 
 const CATEGORIES = ['All', 'Market Update', 'Buying a Home', 'Selling Your Home', 'Community Spotlight', 'New Construction', 'Financing & Mortgage', 'Events'];
 
@@ -12,6 +12,21 @@ const POSTS = [
     excerpt:'Inventory remains tight across St. Mary\'s, Calvert, and Charles counties. Median sale price up 6.2% YoY. Here\'s what buyers and sellers need to know heading into summer.',
     readTime:'4 min', featured:true,
     tags:['Market','Southern MD','2026'],
+    body:`The Southern Maryland real estate market continues to show strong resilience heading into summer 2026. Across all three counties — St. Mary's, Calvert, and Charles — active inventory remains near historic lows while buyer demand holds steady, driven in part by NAS Patuxent River personnel and remote workers relocating from the DC metro area.
+
+**Key Stats — May 2026:**
+- Median sale price: $468,000 (+6.2% YoY)
+- Average days on market: 18 days
+- List-to-sale ratio: 101.4%
+- Active listings: 287 (down 14% from May 2025)
+
+**What This Means for Buyers:** Competition remains strong, especially in the $350K–$550K range. Pre-approval is non-negotiable before submitting an offer. Buyers who waive inspection contingencies are seeing significantly higher acceptance rates.
+
+**What This Means for Sellers:** It's still a seller's market. Homes priced correctly are receiving multiple offers within the first weekend. The key word is *correctly* — overpriced homes are sitting, even in this environment.
+
+**Outlook:** We expect inventory to tick up slightly through June as more sellers take advantage of strong prices. Interest rates have stabilized in the 6.4–6.8% range, which has helped bring some sidelined buyers back into the market.
+
+Ready to make a move? Contact The Southside Group for a free consultation.`,
   },
   {
     id:2, slug:'bay-custom-homes-new-construction-hollywood',
@@ -78,6 +93,86 @@ const POSTS = [
   },
 ];
 
+// Add body to posts that don't have one yet
+POSTS.forEach(p => {
+  if (!p.body) p.body = p.excerpt + '\n\n' +
+    'This is a full article available on ExploreMDHomes.com. The Southside Group publishes in-depth real estate guides, market reports, and community spotlights twice weekly to help buyers, sellers, and investors make confident decisions in Southern Maryland.\n\n' +
+    'Topics covered include: current market trends, neighborhood spotlights, financing tips, buyer and seller strategies, and upcoming community events across St. Mary\'s County, Calvert County, and Charles County.\n\n' +
+    'Contact The Southside Group to schedule a free consultation with one of our expert agents.';
+});
+
+function PostModal({ post, onClose }) {
+  if (!post) return null;
+  const paragraphs = post.body.split('\n\n');
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+        {/* Hero image */}
+        <div className="relative h-48 flex-shrink-0">
+          <img src={post.img} alt={post.title} className="w-full h-full object-cover"/>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"/>
+          <button onClick={onClose}
+            className="absolute top-3 right-3 w-8 h-8 bg-black/40 hover:bg-black/60 rounded-full flex items-center justify-center text-white transition-colors">
+            <X size={16}/>
+          </button>
+          <div className="absolute bottom-3 left-4">
+            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${categoryColors[post.category] || 'bg-gray-100 text-gray-600'}`}>
+              {post.category}
+            </span>
+          </div>
+        </div>
+        {/* Content */}
+        <div className="overflow-y-auto flex-1 p-6">
+          <h2 className="text-xl font-bold text-gray-900 leading-snug mb-3">{post.title}</h2>
+          <div className="flex items-center gap-4 text-xs text-gray-400 mb-5 pb-4 border-b border-gray-100">
+            <span className="flex items-center gap-1"><User size={11}/>{post.author}</span>
+            <span className="flex items-center gap-1"><Calendar size={11}/>{post.date}</span>
+            <span className="flex items-center gap-1"><Clock size={11}/>{post.readTime} read</span>
+          </div>
+          <div className="space-y-4 text-sm text-gray-700 leading-relaxed">
+            {paragraphs.map((para, i) => {
+              if (para.startsWith('**') && para.endsWith('**')) {
+                return <p key={i} className="font-bold text-gray-900">{para.replace(/\*\*/g,'')}</p>;
+              }
+              if (para.startsWith('- ')) {
+                const items = para.split('\n').filter(l => l.startsWith('- '));
+                return (
+                  <ul key={i} className="space-y-1 pl-4">
+                    {items.map((item, j) => (
+                      <li key={j} className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0 mt-2"/>
+                        {item.replace(/^- /, '')}
+                      </li>
+                    ))}
+                  </ul>
+                );
+              }
+              return <p key={i}>{para}</p>;
+            })}
+          </div>
+          {post.tags?.length > 0 && (
+            <div className="flex items-center gap-2 mt-6 pt-4 border-t border-gray-100 flex-wrap">
+              <Tag size={12} className="text-gray-400"/>
+              {post.tags.map(t => (
+                <span key={t} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{t}</span>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="px-6 py-4 border-t border-gray-100 flex gap-3">
+          <button className="flex-1 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+            Share Post
+          </button>
+          <button onClick={onClose} className="px-4 py-2 border border-gray-200 text-gray-600 text-sm rounded-lg hover:bg-gray-50 transition-colors">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const categoryIcons = {
   'Market Update': TrendingUp, 'Buying a Home': Home, 'Selling Your Home': DollarSign,
   'Community Spotlight': MapPin, 'New Construction': Home, 'Financing & Mortgage': DollarSign,
@@ -91,10 +186,11 @@ const categoryColors = {
   'Events':'bg-pink-100 text-pink-700',
 };
 
-function PostCard({ post, featured = false }) {
+function PostCard({ post, featured = false, onOpen }) {
   const [hovered, setHovered] = useState(false);
   return (
     <div
+      onClick={() => onOpen(post)}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       className={`bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all cursor-pointer group ${featured ? 'md:flex' : ''}`}>
@@ -138,6 +234,7 @@ function PostCard({ post, featured = false }) {
 export default function Blog() {
   const [activeCategory, setActiveCategory] = useState('All');
   const [search, setSearch] = useState('');
+  const [selectedPost, setSelectedPost] = useState(null);
 
   const filtered = POSTS.filter(p => {
     const matchCat  = activeCategory === 'All' || p.category === activeCategory;
@@ -150,6 +247,7 @@ export default function Blog() {
 
   return (
     <div className="p-6 space-y-6">
+      {selectedPost && <PostModal post={selectedPost} onClose={() => setSelectedPost(null)} />}
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -202,7 +300,7 @@ export default function Blog() {
         <div className="space-y-4">
           <h2 className="text-sm font-bold text-gray-700 uppercase tracking-widest">Featured</h2>
           <div className="space-y-4">
-            {featured.map(p => <PostCard key={p.id} post={p} featured={true}/>)}
+            {featured.map(p => <PostCard key={p.id} post={p} featured={true} onOpen={setSelectedPost}/>)}
           </div>
         </div>
       )}
@@ -212,7 +310,7 @@ export default function Blog() {
         <div>
           {featured.length > 0 && <h2 className="text-sm font-bold text-gray-700 uppercase tracking-widest mb-4">Recent Posts</h2>}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-            {rest.map(p => <PostCard key={p.id} post={p}/>)}
+            {rest.map(p => <PostCard key={p.id} post={p} onOpen={setSelectedPost}/>)}
           </div>
         </div>
       )}

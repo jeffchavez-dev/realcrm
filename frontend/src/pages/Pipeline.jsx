@@ -120,7 +120,7 @@ export default function Pipeline() {
       {/* Kanban Board */}
       <div className="flex gap-3 overflow-x-auto pb-4">
         {STAGES.map(stage => {
-          const col = data.pipeline[stage];
+          const col = data.pipeline[stage] || { deals: [], totalValue: 0, totalCommission: 0 };
           return (
             <div key={stage} className="flex-shrink-0 w-56">
               {/* Column Header */}
