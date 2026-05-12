@@ -21,32 +21,34 @@ const stageHeaderColors = {
   'Under Contract':'bg-purple-500','Closed Won':'bg-green-500','Closed Lost':'bg-gray-400',
 };
 const tempStyle = { Hot:'bg-red-100 text-red-700', Warm:'bg-amber-100 text-amber-700', Cold:'bg-blue-100 text-blue-700' };
-const tempIcon = { Hot:<Flame size={10}/>, Warm:<Thermometer size={10}/>, Cold:<Snowflake size={10}/> };
+const tempIcon  = { Hot:<Flame size={10}/>, Warm:<Thermometer size={10}/>, Cold:<Snowflake size={10}/> };
 
-function DealCard({ deal, onMove, onDragStart }) {
-  const [dragging, setDragging] = useState(false);
+function DealCard({ deal, onMove, dragRef }) {
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleDragStart = (e) => {
-    setDragging(true);
+    // Store drag info in the shared ref — no dataTransfer.getData needed
+    dragRef.current = { dealId: deal.id, fromStage: deal.stage };
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('dealId', deal.id);
-    e.dataTransfer.setData('fromStage', deal.stage);
-    onDragStart(deal);
+    // Small timeout so the drag image renders before opacity drops
+    setTimeout(() => setIsDragging(true), 0);
   };
 
-  const handleDragEnd = () => setDragging(false);
+  const handleDragEnd = () => {
+    setIsDragging(false);
+    dragRef.current = null;
+  };
 
   return (
     <div
       draggable
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
-      className={`rounded-lg border-2 p-3 mb-2 bg-white hover:shadow-md transition-all cursor-grab active:cursor-grabbing select-none
+      className={`rounded-lg border-2 p-3 mb-2 bg-white hover:shadow-md transition-all select-none
         ${stageColors[deal.stage] || ''}
-        ${dragging ? 'opacity-40 scale-95 rotate-1' : 'opacity-100'}
+        ${isDragging ? 'opacity-30 scale-95' : 'opacity-100 cursor-grab active:cursor-grabbing'}
       `}
     >
-      {/* Drag handle row */}
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-1.5 min-w-0">
           <GripVertical size={13} className="text-gray-300 flex-shrink-0 mt-0.5"/>
@@ -78,14 +80,14 @@ function DealCard({ deal, onMove, onDragStart }) {
         )}
       </div>
 
-      {deal.agent && <p className="text-[11px] text-gray-400 mt-1.5 pl-5">{deal.agent.name}</p>}
+      {deal.agent    && <p className="text-[11px] text-gray-400 mt-1.5 pl-5">{deal.agent.name}</p>}
       {deal.closeDate && (
         <p className="text-[11px] text-gray-400 pl-5">
           Close: {new Date(deal.closeDate).toLocaleDateString('en-US', { month:'short', day:'numeric' })}
         </p>
       )}
 
-      {/* Move buttons — still available as fallback */}
+      {/* Back / Advance buttons */}
       <div className="flex gap-1 mt-2 pt-2 border-t border-gray-100">
         {STAGES.indexOf(deal.stage) > 0 && (
           <button
@@ -108,12 +110,10 @@ function DealCard({ deal, onMove, onDragStart }) {
   );
 }
 
-function KanbanColumn({ stage, col, onMove, dragOverStage, onDragOver, onDragLeave, onDrop }) {
-  const isOver = dragOverStage === stage;
-
+function KanbanColumn({ stage, col, onMove, dragRef, isOver, onDragOver, onDragLeave, onDrop }) {
   return (
     <div className="flex-shrink-0 w-56">
-      {/* Column Header */}
+      {/* Header */}
       <div className={`rounded-lg px-3 py-2 mb-2 flex items-center justify-between ${stageHeaderColors[stage]}`}>
         <span className="text-xs font-bold text-white uppercase tracking-wide">{stage}</span>
         <span className="text-xs text-white/80 font-medium bg-black/20 px-1.5 py-0.5 rounded-full">
@@ -121,7 +121,7 @@ function KanbanColumn({ stage, col, onMove, dragOverStage, onDragOver, onDragLea
         </span>
       </div>
 
-      {/* Stage metrics */}
+      {/* Metrics */}
       {col.deals.length > 0 && (
         <div className="text-[11px] text-gray-400 mb-2 px-1">
           ${(col.totalValue/1000).toFixed(0)}K vol · ${(col.totalCommission/1000).toFixed(0)}K GCI
@@ -133,26 +133,19 @@ function KanbanColumn({ stage, col, onMove, dragOverStage, onDragOver, onDragLea
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
         onDrop={onDrop}
-        className={`kanban-col min-h-[80px] rounded-lg transition-all duration-150 p-1 -m-1
-          ${isOver
-            ? 'bg-blue-50 ring-2 ring-blue-400 ring-dashed'
-            : 'bg-transparent'
-          }
+        className={`min-h-[80px] rounded-xl p-1 transition-all duration-150
+          ${isOver ? 'bg-blue-50 ring-2 ring-blue-400 ring-dashed' : ''}
         `}
       >
         {col.deals.map(deal => (
-          <DealCard
-            key={deal.id}
-            deal={deal}
-            onMove={onMove}
-            onDragStart={() => {}}
-          />
+          <DealCard key={deal.id} deal={deal} onMove={onMove} dragRef={dragRef} />
         ))}
+
         {col.deals.length === 0 && (
           <div className={`border-2 border-dashed rounded-lg p-4 text-center text-xs transition-colors
-            ${isOver ? 'border-blue-400 text-blue-400 bg-blue-50' : 'border-gray-200 text-gray-400'}
+            ${isOver ? 'border-blue-400 text-blue-500' : 'border-gray-200 text-gray-400'}
           `}>
-            {isOver ? 'Drop here' : 'Empty'}
+            {isOver ? '↓ Drop here' : 'Empty'}
           </div>
         )}
       </div>
@@ -161,11 +154,13 @@ function KanbanColumn({ stage, col, onMove, dragOverStage, onDragOver, onDragLea
 }
 
 export default function Pipeline() {
-  const [data, setData]           = useState(null);
-  const [loading, setLoading]     = useState(true);
-  const [totals, setTotals]       = useState({ value: 0, commission: 0 });
+  const [data, setData]               = useState(null);
+  const [loading, setLoading]         = useState(true);
+  const [totals, setTotals]           = useState({ value: 0, commission: 0 });
   const [dragOverStage, setDragOverStage] = useState(null);
-  const [draggingDeal, setDraggingDeal]   = useState(null);
+
+  // Shared ref so DealCard can hand off drag info without dataTransfer.getData
+  const dragRef = useRef(null);
 
   const load = () => {
     pipelineApi.get().then(d => {
@@ -180,19 +175,22 @@ export default function Pipeline() {
   useEffect(() => { load(); }, []);
 
   const moveStage = async (dealId, stage) => {
-    await pipelineApi.moveStage(dealId, stage);
-    load();
+    try {
+      await pipelineApi.moveStage(dealId, stage);
+      load();
+    } catch (err) {
+      console.error('moveStage failed:', err);
+    }
   };
 
-  // Drag handlers
   const handleDragOver = (e, stage) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-    setDragOverStage(stage);
+    if (dragOverStage !== stage) setDragOverStage(stage);
   };
 
-  const handleDragLeave = (e, stage) => {
-    // Only clear if we're leaving the column entirely (not entering a child)
+  const handleDragLeave = (e) => {
+    // Only clear if the mouse actually left the column (not entering a child element)
     if (!e.currentTarget.contains(e.relatedTarget)) {
       setDragOverStage(null);
     }
@@ -201,10 +199,11 @@ export default function Pipeline() {
   const handleDrop = async (e, targetStage) => {
     e.preventDefault();
     setDragOverStage(null);
-    const dealId    = e.dataTransfer.getData('dealId');
-    const fromStage = e.dataTransfer.getData('fromStage');
-    if (!dealId || fromStage === targetStage) return;
-    await moveStage(dealId, targetStage);
+    const drag = dragRef.current;
+    if (!drag) return;
+    if (drag.fromStage === targetStage) return;
+    await moveStage(drag.dealId, targetStage);
+    dragRef.current = null;
   };
 
   if (loading) return (
@@ -221,7 +220,7 @@ export default function Pipeline() {
           <h1 className="text-xl font-bold text-gray-900">Pipeline</h1>
           <p className="text-sm text-gray-500 mt-0.5">
             ${(totals.value/1000).toFixed(0)}K deal volume · ${(totals.commission/1000).toFixed(0)}K estimated commission
-            <span className="ml-2 text-gray-400">· Drag cards to move between stages</span>
+            <span className="ml-2 text-gray-400">· Drag cards between stages</span>
           </p>
         </div>
         <div className="flex gap-3">
@@ -246,9 +245,10 @@ export default function Pipeline() {
               stage={stage}
               col={col}
               onMove={moveStage}
-              dragOverStage={dragOverStage}
+              dragRef={dragRef}
+              isOver={dragOverStage === stage}
               onDragOver={e => handleDragOver(e, stage)}
-              onDragLeave={e => handleDragLeave(e, stage)}
+              onDragLeave={handleDragLeave}
               onDrop={e => handleDrop(e, stage)}
             />
           );

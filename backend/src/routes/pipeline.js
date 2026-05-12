@@ -3,7 +3,7 @@ const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-const STAGES = ['New Lead','Contacted','Qualifying','Active Search','Offer Made','Under Contract','Closed Won','Closed Lost'];
+const STAGES = ['New Lead','Contacted','Qualifying','Active Search','New Construction','Offer Made','Under Contract','Closed Won','Closed Lost'];
 
 // GET /api/pipeline — all deals grouped by stage
 router.get('/', async (req, res) => {
@@ -40,7 +40,7 @@ router.patch('/:id/stage', async (req, res) => {
     // Sync lead status
     const statusMap = {
       'New Lead': 'New', 'Contacted': 'Contacted', 'Qualifying': 'Nurturing',
-      'Active Search': 'Nurturing', 'Offer Made': 'Hot',
+      'Active Search': 'Nurturing', 'New Construction': 'Nurturing', 'Offer Made': 'Hot',
       'Under Contract': 'Under Contract', 'Closed Won': 'Closed', 'Closed Lost': 'Lost'
     };
     if (statusMap[stage]) {
