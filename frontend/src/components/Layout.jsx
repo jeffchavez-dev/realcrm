@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom';
-import { LayoutDashboard, Users, GitBranch, UserCheck, Plug, Bell, Search, Home, LogOut, ChevronDown, MapPin, FileSignature, Phone, Mail, X, CheckCheck, Clock, Flame, AlertCircle } from 'lucide-react';
+import { LayoutDashboard, Users, GitBranch, UserCheck, Plug, Bell, Search, Home, LogOut, ChevronDown, MapPin, FileSignature, Phone, Mail, X, CheckCheck, Clock, Flame, AlertCircle, BookOpen } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { leads as leadsApi } from '../api/client';
 
@@ -11,6 +11,7 @@ const nav = [
   { to:'/mls',          icon: MapPin,          label:'MLS / IDX' },
   { to:'/backoffice',   icon: FileSignature,   label:'Back Office' },
   { to:'/agents',       icon: UserCheck,       label:'Agents' },
+  { to:'/blog',         icon: BookOpen,        label:'Blog / Content' },
   { to:'/integrations', icon: Plug,            label:'Integrations' },
 ];
 

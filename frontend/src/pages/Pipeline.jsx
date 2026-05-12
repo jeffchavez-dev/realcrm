@@ -3,12 +3,13 @@ import { Link } from 'react-router-dom';
 import { pipeline as pipelineApi } from '../api/client';
 import { DollarSign, Flame, Thermometer, Snowflake, GripVertical } from 'lucide-react';
 
-const STAGES = ['New Lead','Contacted','Qualifying','Active Search','Offer Made','Under Contract','Closed Won','Closed Lost'];
+const STAGES = ['New Lead','Contacted','Qualifying','Active Search','New Construction','Offer Made','Under Contract','Closed Won','Closed Lost'];
 const stageColors = {
   'New Lead':'border-gray-300 bg-gray-50',
   'Contacted':'border-blue-300 bg-blue-50',
   'Qualifying':'border-indigo-300 bg-indigo-50',
   'Active Search':'border-amber-300 bg-amber-50',
+  'New Construction':'border-orange-300 bg-orange-50',
   'Offer Made':'border-orange-300 bg-orange-50',
   'Under Contract':'border-purple-300 bg-purple-50',
   'Closed Won':'border-green-300 bg-green-50',
@@ -16,8 +17,8 @@ const stageColors = {
 };
 const stageHeaderColors = {
   'New Lead':'bg-gray-500','Contacted':'bg-blue-500','Qualifying':'bg-indigo-500',
-  'Active Search':'bg-amber-500','Offer Made':'bg-orange-500','Under Contract':'bg-purple-500',
-  'Closed Won':'bg-green-500','Closed Lost':'bg-gray-400',
+  'Active Search':'bg-amber-500','New Construction':'bg-orange-400','Offer Made':'bg-orange-500',
+  'Under Contract':'bg-purple-500','Closed Won':'bg-green-500','Closed Lost':'bg-gray-400',
 };
 const tempStyle = { Hot:'bg-red-100 text-red-700', Warm:'bg-amber-100 text-amber-700', Cold:'bg-blue-100 text-blue-700' };
 const tempIcon = { Hot:<Flame size={10}/>, Warm:<Thermometer size={10}/>, Cold:<Snowflake size={10}/> };

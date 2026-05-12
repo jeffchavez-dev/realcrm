@@ -12,6 +12,7 @@ import Agents from './pages/Agents';
 import Integrations from './pages/Integrations';
 import MLS from './pages/MLS';
 import BackOffice from './pages/BackOffice';
+import Blog from './pages/Blog';
 
 class ErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { error: null }; }
@@ -46,6 +47,7 @@ export default function App() {
               <Route path="backoffice"   element={<BackOffice />} />
               <Route path="agents"       element={<Agents />} />
               <Route path="integrations" element={<Integrations />} />
+              <Route path="blog"         element={<Blog />} />
             </Route>
           </Routes>
         </BrowserRouter>

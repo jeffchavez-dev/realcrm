@@ -175,11 +175,17 @@ export default function LeadProfile() {
         <div className="col-span-2 space-y-4">
           {/* Quick compose */}
           <div className="card p-4">
-            <div className="flex gap-2 mb-3">
-              {['activity','tasks','deals'].map(t => (
-                <button key={t} onClick={() => setActiveTab(t)}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors capitalize ${activeTab===t ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
-                  {t}
+            <div className="flex gap-1.5 mb-3 flex-wrap">
+              {[
+                { key:'activity', label:'Activity' },
+                { key:'tasks',    label:'Tasks' },
+                { key:'deals',    label:'Pipeline' },
+                { key:'buyer',    label:'🏠 Buyer Journey' },
+                { key:'seller',   label:'📋 Seller Journey' },
+              ].map(t => (
+                <button key={t.key} onClick={() => setActiveTab(t.key)}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${activeTab===t.key ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
+                  {t.label}
                 </button>
               ))}
             </div>
@@ -266,7 +272,104 @@ export default function LeadProfile() {
               ))}
             </div>
           )}
+
+          {/* Buyer Journey Tab */}
+          {activeTab === 'buyer' && <WorkflowTab type="buyer" leadName={`${lead.firstName} ${lead.lastName}`} />}
+
+          {/* Seller Journey Tab */}
+          {activeTab === 'seller' && <WorkflowTab type="seller" leadName={`${lead.firstName} ${lead.lastName}`} />}
         </div>
+      </div>
+    </div>
+  );
+}
+
+const BUYER_STEPS = [
+  { step:1,  title:'Initial Consultation',            desc:'Discuss goals, timeline, must-haves vs. nice-to-haves. Set search criteria.',        tag:'Intake' },
+  { step:2,  title:'Pre-Approval',                    desc:'Connect with preferred lender. Obtain pre-approval letter before viewing homes.',     tag:'Finance' },
+  { step:3,  title:'Set Up MLS E-Alerts',             desc:'Configure automated property alerts matching buyer criteria. Daily or instant.',       tag:'Search' },
+  { step:4,  title:'Property Showings',               desc:'Schedule and conduct property tours. Log feedback per showing.',                       tag:'Search' },
+  { step:5,  title:'Home Selection',                  desc:'Buyer selects target property. Pull comps, review disclosures, assess condition.',     tag:'Search' },
+  { step:6,  title:'Offer Strategy & Submission',     desc:'Prepare competitive offer with terms, contingencies, and escalation clauses.',         tag:'Offer' },
+  { step:7,  title:'Offer Accepted / Negotiation',    desc:'Negotiate terms, counter-offers, and finalize contract price and conditions.',         tag:'Offer' },
+  { step:8,  title:'Home Inspection',                 desc:'Schedule inspection within contract window. Review report with buyer.',                tag:'Contract' },
+  { step:9,  title:'Appraisal & Financing',           desc:'Lender orders appraisal. Monitor financing contingency deadline.',                    tag:'Contract' },
+  { step:10, title:'Final Walk-Through',              desc:'Confirm property condition matches contract terms before closing.',                    tag:'Closing' },
+  { step:11, title:'Closing Day',                     desc:'Sign documents, transfer funds, hand over keys. Log activity and update pipeline.',    tag:'Closing' },
+  { step:12, title:'Post-Close Follow-Up',            desc:'Check in at 30/60/90 days. Request review. Add to referral nurture campaign.',        tag:'Retention' },
+];
+
+const SELLER_STEPS = [
+  { step:1,  title:'Listing Consultation',            desc:'Tour home, discuss seller goals, review market conditions and comparable sales.',      tag:'Intake' },
+  { step:2,  title:'CMA & Pricing Strategy',          desc:'Prepare Comparative Market Analysis. Present pricing recommendation.',                 tag:'Pricing' },
+  { step:3,  title:'Listing Agreement Signed',        desc:'Execute listing agreement via DocuSign. Set commission, terms, and duration.',         tag:'Legal' },
+  { step:4,  title:'Pre-Listing Prep',                desc:'Staging consult, repairs, professional photography, floor plan, video tour.',          tag:'Prep' },
+  { step:5,  title:'MLS Active — Go Live',            desc:'List on Bright MLS. Syndicate to Zillow, Realtor.com, Homesnap. Launch social ads.',  tag:'Marketing' },
+  { step:6,  title:'Showings & Open Houses',          desc:'Coordinate showings via ShowingTime. Host open houses. Collect buyer feedback.',       tag:'Marketing' },
+  { step:7,  title:'Offer Review',                    desc:'Review all offers. Advise on price, contingencies, lender strength, closing date.',    tag:'Offer' },
+  { step:8,  title:'Under Contract',                  desc:'Execute ratified contract. Notify all parties. Open title order.',                    tag:'Contract' },
+  { step:9,  title:'Inspections & Appraisal',         desc:'Manage buyer inspection requests. Monitor appraisal. Handle repair negotiations.',     tag:'Contract' },
+  { step:10, title:'Clear to Close',                  desc:'All contingencies removed. Final lender approval received. Coordinate closing.',       tag:'Closing' },
+  { step:11, title:'Closing Day',                     desc:'Attend closing. Collect proceeds. Hand over keys. Update pipeline to Closed Won.',     tag:'Closing' },
+  { step:12, title:'Post-Sale Nurture',               desc:'Thank you gift, request review, add to past-client nurture campaign.',                 tag:'Retention' },
+];
+
+const tagColors = {
+  Intake:'bg-gray-100 text-gray-600', Finance:'bg-blue-100 text-blue-700', Search:'bg-indigo-100 text-indigo-700',
+  Offer:'bg-amber-100 text-amber-700', Contract:'bg-purple-100 text-purple-700', Closing:'bg-green-100 text-green-700',
+  Retention:'bg-pink-100 text-pink-700', Pricing:'bg-cyan-100 text-cyan-700', Legal:'bg-orange-100 text-orange-700',
+  Prep:'bg-teal-100 text-teal-700', Marketing:'bg-violet-100 text-violet-700',
+};
+
+function WorkflowTab({ type, leadName }) {
+  const steps = type === 'buyer' ? BUYER_STEPS : SELLER_STEPS;
+  const [completed, setCompleted] = useState(new Set());
+
+  const toggle = (n) => setCompleted(s => {
+    const next = new Set(s);
+    next.has(n) ? next.delete(n) : next.add(n);
+    return next;
+  });
+
+  const pct = Math.round((completed.size / steps.length) * 100);
+
+  return (
+    <div className="card p-5">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-sm font-bold text-gray-900">
+            {type === 'buyer' ? '🏠 Buyer Journey' : '📋 Seller Journey'} — {leadName}
+          </h2>
+          <p className="text-xs text-gray-400 mt-0.5">{completed.size} of {steps.length} steps complete</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-24 h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-full bg-blue-600 rounded-full transition-all duration-300" style={{ width:`${pct}%` }}/>
+          </div>
+          <span className="text-xs font-semibold text-blue-600">{pct}%</span>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {steps.map(s => {
+          const done = completed.has(s.step);
+          return (
+            <button key={s.step} onClick={() => toggle(s.step)}
+              className={`w-full flex items-start gap-3 p-3 rounded-xl border text-left transition-all ${done ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-white hover:border-blue-200 hover:bg-blue-50/30'}`}>
+              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors ${done ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
+                {done && <svg viewBox="0 0 12 12" className="w-3 h-3"><path d="M2 6l3 3 5-5" stroke="white" strokeWidth="2" fill="none"/></svg>}
+                {!done && <span className="text-[9px] font-bold text-gray-400">{s.step}</span>}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <p className={`text-sm font-semibold ${done ? 'line-through text-gray-400' : 'text-gray-900'}`}>{s.title}</p>
+                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0 ${tagColors[s.tag] || 'bg-gray-100 text-gray-600'}`}>{s.tag}</span>
+                </div>
+                <p className={`text-xs leading-relaxed ${done ? 'text-gray-400' : 'text-gray-500'}`}>{s.desc}</p>
+              </div>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
